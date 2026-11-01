@@ -22,6 +22,14 @@ import {
 import { AmenityRow, AreaField, EquipmentChip, FieldShell, InfoNote, SelectField, TextField } from "./fields";
 
 /* ------------------------------------------------------------------ */
+/* Backend                                                             */
+/* ------------------------------------------------------------------ */
+
+// Express server in ../studio-space-server. Override with
+// NEXT_PUBLIC_API_URL in .env when the backend is deployed elsewhere.
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+/* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
 /* ------------------------------------------------------------------ */
 
@@ -126,7 +134,7 @@ export function AddStudioView() {
     setSending(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:5000/add-studio", {
+      const res = await fetch(`${API_URL}/add-studio`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -139,11 +147,21 @@ export function AddStudioView() {
           gallery,
         }),
       });
-      const data = await res.json();
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || `Server responded with ${res.status}`);
+      }
+
       console.log(data);
       setDone(true);
-    } catch {
-      setError("Could not reach the server. Check that the backend is running.");
+    } catch (err) {
+      setError(
+        err instanceof Error && !(err instanceof TypeError)
+          ? err.message
+          : "Could not reach the server. Check that the backend is running."
+      );
     } finally {
       setSending(false);
     }
