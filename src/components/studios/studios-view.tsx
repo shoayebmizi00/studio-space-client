@@ -34,7 +34,7 @@ export function StudiosView() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#faf9f3]">
+    <div className="flex min-h-screen flex-col bg-surface-alt">
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6 lg:py-14">
         {/* Page intro */}
         <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.25em] text-muted-foreground">

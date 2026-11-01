@@ -198,7 +198,7 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
   const maxDist = Math.max(1, ...detail.distribution);
 
   return (
-    <div className="bg-[#faf9f3]">
+    <div className="bg-surface-alt">
       <main className="mx-auto w-full max-w-7xl px-4 pb-16 pt-8 sm:px-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-xs text-muted-foreground">

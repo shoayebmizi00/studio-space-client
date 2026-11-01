@@ -119,11 +119,15 @@ const appTags = [
 export function Footer() {
   const pathname = usePathname();
   const isLanding = pathname === "/";
+
+  // Full-screen auth pages render their own footer text — no shared chrome.
+  if (pathname === "/sign-in" || pathname === "/sign-up") return null;
+
   const columns = isLanding ? landingColumns : appColumns;
   const tags = isLanding ? landingTags : appTags;
 
   return (
-    <footer className={isLanding ? "bg-background" : "bg-[#faf9f3]"}>
+    <footer className={isLanding ? "bg-background" : "bg-surface-alt"}>
       <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6">
         <div
           className={
