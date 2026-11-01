@@ -40,7 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-about
+
 contact
 how-it-works
 add-studio
@@ -48,6 +48,5 @@ dashboard
 my-bookings
 profile
 saved-studios
-components/about
 components/contact
 components/how-it-works
