@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { MapPin, Users } from "lucide-react";
 import type { Studio } from "@/lib/studios-data";
 import { Stars } from "./studio-card";
@@ -15,6 +16,11 @@ export function StudioListCard({ studio }: { studio: Studio }) {
           sizes="(max-width: 640px) 100vw, 288px"
           className="object-cover"
         />
+        <Link
+          href={`/studio-details?id=${studio.id}`}
+          aria-label={`View ${studio.name}`}
+          className="absolute inset-0"
+        />
       </div>
 
       {/* Content */}
@@ -24,7 +30,12 @@ export function StudioListCard({ studio }: { studio: Studio }) {
             {studio.category}
           </p>
           <h3 className="text-lg font-semibold tracking-tight">
-            {studio.name}
+            <Link
+              href={`/studio-details?id=${studio.id}`}
+              className="transition-opacity hover:opacity-70"
+            >
+              {studio.name}
+            </Link>
           </h3>
           <p className="mt-1.5 line-clamp-1 text-[13px] text-muted-foreground sm:line-clamp-2">
             {studio.tagline}

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { Heart, MapPin, Users, Star } from "lucide-react";
 import type { Studio } from "@/lib/studios-data";
 import { cn } from "cn";
@@ -53,6 +54,12 @@ export function StudioCard({
           {studio.badge}
         </span>
 
+        <Link
+          href={`/studio-details?id=${studio.id}`}
+          aria-label={`View ${studio.name}`}
+          className="absolute inset-0"
+        />
+
         <button
           type="button"
           aria-label={isFavorite ? "Remove from saved" : "Save studio"}
@@ -68,7 +75,12 @@ export function StudioCard({
       {/* Name + rating */}
       <div className="flex items-start justify-between gap-3">
         <h3 className="truncate text-[15px] font-semibold tracking-tight">
-          {studio.name}
+          <Link
+            href={`/studio-details?id=${studio.id}`}
+            className="transition-opacity hover:opacity-70"
+          >
+            {studio.name}
+          </Link>
         </h3>
         <span className="flex shrink-0 items-center gap-1.5">
           <Stars rating={studio.rating} />
