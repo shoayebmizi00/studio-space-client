@@ -48,7 +48,6 @@ dashboard
 my-bookings
 profile
 saved-studios
-studios
-components
-components/studios
-assests
+components/about
+components/contact
+components/how-it-works
