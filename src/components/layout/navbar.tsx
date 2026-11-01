@@ -10,6 +10,7 @@ const links = [
   { label: "Explore studios", href: "/studios" },
   { label: "How it works", href: "/how-it-works" },
   { label: "About", href: "/about" },
+  { label: "Add a studio", href: "/add-studio" },
   { label: "Contact", href: "/contact" },
 ];
 
