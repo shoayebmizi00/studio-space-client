@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { SectionHeader } from "./section-header";
 import { getStudios } from "@/lib/api";
+import { fetchPublishedStudios } from "@/lib/studios-db";
 import type { StudioListing } from "@/lib/api";
 
 function categoryIcon(category: string) {
@@ -33,7 +34,11 @@ export async function CategoriesSection() {
   try {
     studios = await getStudios();
   } catch {
-    studios = null;
+    try {
+      studios = await fetchPublishedStudios();
+    } catch {
+      studios = null;
+    }
   }
   const categoryCounts = studios
     ? Array.from(

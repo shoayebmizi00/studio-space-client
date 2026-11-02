@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -25,14 +25,6 @@ import {
   type AddStudioForm,
 } from "@/lib/add-studio-data";
 import { AmenityRow, AreaField, EquipmentChip, FieldShell, InfoNote, SelectField, TextField } from "./fields";
-
-/* ------------------------------------------------------------------ */
-/* Backend                                                             */
-/* ------------------------------------------------------------------ */
-
-// Express server in ../studio-space-server. Override with
-// NEXT_PUBLIC_API_URL in .env when the backend is deployed elsewhere.
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -117,7 +109,8 @@ function ImageTile({
 /* ------------------------------------------------------------------ */
 
 export function AddStudioView() {
-  const router = useRouter();
+  const { data: session } = useSession();
+  const user = session?.user;
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<AddStudioForm>(initialForm);
   // Amenities start pre-selected to mirror the reference state.
@@ -143,6 +136,7 @@ export function AddStudioView() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [publishedId, setPublishedId] = useState<string | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -232,7 +226,7 @@ export function AddStudioView() {
     setSending(true);
     setError(null);
     try {
-      const res = await fetch(`${API_URL}/add-studio`, {
+      const res = await fetch("/api/add-studio", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -243,6 +237,8 @@ export function AddStudioView() {
           equipment,
           coverImage,
           gallery,
+          hostName: user?.name,
+          hostEmail: user?.email,
         }),
       });
 
@@ -252,17 +248,19 @@ export function AddStudioView() {
         throw new Error(data?.error || `Server responded with ${res.status}`);
       }
 
-      console.log(data);
+      const newId = data?.insertedId || data?.studio?._id || data?.studio?.id;
+      if (newId) {
+        setPublishedId(String(newId));
+      }
       setDone(true);
       toast.success("Studio published", {
         description: `${form.name} is now live in the marketplace.`,
       });
-      router.replace("/");
     } catch (err) {
       setError(
-        err instanceof Error && !(err instanceof TypeError)
+        err instanceof Error
           ? err.message
-          : "Could not reach the server. Check that the backend is running."
+          : "Could not publish studio. Please try again."
       );
     } finally {
       setSending(false);
@@ -274,23 +272,46 @@ export function AddStudioView() {
   if (done) {
     return (
       <main className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6">
-        <div className="flex flex-col items-center gap-5 rounded-3xl border border-border/60 bg-card p-12 text-center">
-          <span className="grid size-12 place-items-center rounded-full bg-primary">
-            <Check className="size-5 text-primary-foreground" />
+        <div className="flex flex-col items-center gap-5 rounded-3xl border border-border/60 bg-card p-12 text-center shadow-xs">
+          <span className="grid size-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-xs">
+            <Check className="size-6 stroke-[2.5]" />
           </span>
-          <h1 className="text-2xl font-semibold tracking-tight">Listing published</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Listing published successfully!</h1>
           <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-            {form.name} is now visible in search. You control when it can be
-            booked from the availability page — weekly hours and blocked dates
-            are checked on every request.
+            <span className="font-semibold text-foreground">{form.name}</span> is now published and visible in the marketplace search and catalog.
           </p>
-          <Link
-            href="/dashboard"
-            className="mt-2 inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground transition-transform hover:brightness-95 active:scale-[0.98]"
-          >
-            Go to My listings
-            <ArrowRight className="size-3.5" />
-          </Link>
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            {publishedId ? (
+              <Link
+                href={`/studio-details?id=${publishedId}`}
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground shadow-xs transition-transform hover:brightness-95 active:scale-[0.98]"
+              >
+                View your studio listing
+                <ArrowRight className="size-3.5" />
+              </Link>
+            ) : null}
+            <Link
+              href="/studios"
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-border/70 bg-card px-5 text-[13px] font-medium text-foreground transition-colors hover:border-foreground/30"
+            >
+              Explore all studios
+            </Link>
+            <Button
+              type="button"
+              onClick={() => {
+                setForm(initialForm);
+                setCoverImage(null);
+                setGallery([]);
+                setStep(1);
+                setDone(false);
+                setPublishedId(null);
+              }}
+              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-border/70 bg-card px-4 text-[13px] text-muted-foreground hover:text-foreground"
+            >
+              Add another studio
+            </Button>
+          </div>
         </div>
       </main>
     );
@@ -300,25 +321,31 @@ export function AddStudioView() {
     <main className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 lg:py-16">
       <h1 className="text-4xl font-semibold tracking-tight">Add a studio</h1>
       <p className="mt-3 text-sm text-muted-foreground">
-        Six steps to a live listing. You can edit everything later from{" "}
-        <Link
-          href="/dashboard"
-          className="text-foreground/80 underline underline-offset-3 transition-opacity hover:opacity-70"
-        >
-          My listings
-        </Link>
-        .
+        Six steps to a live listing. Fill out your workspace details below to publish directly into the catalog.
       </p>
 
       {/* Listing identity banner */}
       <div className="mt-8 flex items-center gap-3 rounded-2xl bg-muted/60 px-5 py-4">
         <CircleUserRound className="size-4 text-foreground/70" />
-        <p className="text-[13px] text-foreground/85">
-          Listing as{" "}
-          <span className="font-semibold text-foreground">Md Shoaeyeb</span>
-          {" · "}
-          mdshoaeyeb1100@gmail.com
-        </p>
+        {user ? (
+          <p className="text-[13px] text-foreground/85">
+            Listing as{" "}
+            <span className="font-semibold text-foreground">{user.name || "Host"}</span>
+            {" · "}
+            {user.email}
+          </p>
+        ) : (
+          <p className="text-[13px] text-foreground/85">
+            Listing as a <span className="font-semibold text-foreground">Guest host</span>.{" "}
+            <Link
+              href="/sign-in?callbackUrl=/add-studio"
+              className="font-medium underline underline-offset-2 transition-colors hover:text-foreground"
+            >
+              Sign in
+            </Link>{" "}
+            to attach this studio to your account.
+          </p>
+        )}
       </div>
 
       {/* Wizard card */}

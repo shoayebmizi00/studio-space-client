@@ -1,6 +1,7 @@
 import { SectionHeader } from "./section-header";
 import { SpaceCard } from "./space-card";
 import { getStudios } from "@/lib/api";
+import { fetchPublishedStudios } from "@/lib/studios-db";
 import type { StudioListing } from "@/lib/api";
 
 export async function FeaturedSpacesSection() {
@@ -10,7 +11,11 @@ export async function FeaturedSpacesSection() {
   try {
     studios = (await getStudios()).slice(0, 6);
   } catch {
-    unavailable = true;
+    try {
+      studios = (await fetchPublishedStudios()).slice(0, 6);
+    } catch {
+      unavailable = true;
+    }
   }
 
   return (
