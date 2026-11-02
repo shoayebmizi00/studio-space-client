@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "cn";
 import type { StudioListing } from "@/lib/api";
 import { createBooking } from "@/lib/bookings";
+import { useSavedStudios } from "@/lib/saved-studios";
 import { toast } from "sonner";
 
 const statCardClass = "rounded-xl border border-border/60 bg-card p-4";
@@ -216,7 +217,23 @@ function BookingWidget({ studio, deposit }: { studio: StudioListing; deposit: nu
 
 export function StudioDetailsView({ studio }: { studio: StudioListing | null }) {
   const [activePhoto, setActivePhoto] = useState(0);
-  const [saved, setSaved] = useState(false);
+  const studioId = studio?._id || studio?.id || "";
+  const { has, toggle } = useSavedStudios();
+  const isSaved = has(studioId);
+
+  const handleToggleSaved = () => {
+    if (!studio) return;
+    const nowSaved = toggle(studioId);
+    if (nowSaved) {
+      toast.success("Studio saved", {
+        description: `${studio.name} added to your saved collection.`,
+      });
+    } else {
+      toast.info("Removed from saved", {
+        description: `${studio.name} removed from your saved collection.`,
+      });
+    }
+  };
 
   if (!studio) {
     return (
@@ -297,16 +314,16 @@ export function StudioDetailsView({ studio }: { studio: StudioListing | null }) 
 
           <Button
             type="button"
-            onClick={() => setSaved((prev) => !prev)}
+            onClick={handleToggleSaved}
             className="flex h-10 items-center gap-2 rounded-full border border-border/70 bg-card px-4 text-[13px] font-medium transition-colors hover:border-foreground/25"
           >
             <Heart
               className={cn(
-                "size-3.5",
-                saved && "fill-red-500 text-red-500"
+                "size-3.5 transition-colors",
+                isSaved && "fill-red-500 text-red-500"
               )}
             />
-            {saved ? "Saved" : "Save studio"}
+            {isSaved ? "Saved" : "Save studio"}
           </Button>
         </div>
 

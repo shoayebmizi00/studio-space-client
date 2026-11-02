@@ -1,10 +1,23 @@
 import Image from "next/image";
 import Link from "next/link";
-import { MapPin, Users } from "lucide-react";
+import { Heart, MapPin, Users } from "lucide-react";
 import { Stars } from "./studio-card";
+import { Button } from "@/components/ui/button";
+import { cn } from "cn";
 import type { StudioListing } from "@/lib/api";
 
-export function StudioListCard({ studio }: { studio: StudioListing }) {
+interface StudioListCardProps {
+  studio: StudioListing;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: string) => void;
+}
+
+export function StudioListCard({
+  studio,
+  isFavorite = false,
+  onToggleFavorite,
+}: StudioListCardProps) {
+  const id = studio._id || studio.id || "";
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card sm:flex-row">
       {/* Image */}
@@ -22,6 +35,21 @@ export function StudioListCard({ studio }: { studio: StudioListing }) {
           aria-label={`View ${studio.name}`}
           className="absolute inset-0"
         />
+        {onToggleFavorite && (
+          <Button
+            type="button"
+            aria-label={isFavorite ? "Remove from saved" : "Save studio"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(id);
+            }}
+            className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-white/90 text-foreground backdrop-blur transition-transform hover:scale-105"
+          >
+            <Heart
+              className={cn("size-3.5 transition-colors", isFavorite && "fill-red-500 text-red-500")}
+            />
+          </Button>
+        )}
       </div>
 
       {/* Content */}

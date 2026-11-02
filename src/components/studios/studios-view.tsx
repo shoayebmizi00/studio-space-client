@@ -10,6 +10,8 @@ import { StudioListCard } from "./studio-list-card";
 import { SortSelect, type SortOption } from "./sort-select";
 import type { FilterState } from "./filters-panel";
 import type { StudioListing } from "@/lib/api";
+import { useSavedStudios } from "@/lib/saved-studios";
+import { toast } from "sonner";
 
 type CatalogStudio = StudioListing & {
   id: string;
@@ -25,7 +27,7 @@ export function StudiosView({ initialCategory }: { initialCategory?: string }) {
   }));
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("Recommended");
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const { has, toggle } = useSavedStudios();
   const [view, setView] = useState<"grid" | "list">("grid");
   const [studios, setStudios] = useState<StudioListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,15 +78,18 @@ export function StudiosView({ initialCategory }: { initialCategory?: string }) {
   );
 
   const toggleFavorite = (id: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+    const isNowSaved = toggle(id);
+    const studio = studios.find((s) => (s._id || s.id) === id);
+    const name = studio?.name || "Studio";
+    if (isNowSaved) {
+      toast.success("Studio saved", {
+        description: `${name} has been added to your saved studios.`,
+      });
+    } else {
+      toast.info("Removed from saved", {
+        description: `${name} has been removed from your saved studios.`,
+      });
+    }
   };
 
   return (
@@ -184,7 +189,7 @@ export function StudiosView({ initialCategory }: { initialCategory?: string }) {
                   <StudioCard
                     key={studio.id}
                     studio={studio}
-                    isFavorite={favorites.has(studio.id)}
+                    isFavorite={has(studio.id)}
                     onToggleFavorite={toggleFavorite}
                   />
                 ))}
@@ -192,7 +197,12 @@ export function StudiosView({ initialCategory }: { initialCategory?: string }) {
             ) : (
               <div className="flex flex-col gap-4">
                 {filtered.map((studio) => (
-                  <StudioListCard key={studio.id} studio={studio} />
+                  <StudioListCard
+                    key={studio.id}
+                    studio={studio}
+                    isFavorite={has(studio.id)}
+                    onToggleFavorite={toggleFavorite}
+                  />
                 ))}
               </div>
             )}

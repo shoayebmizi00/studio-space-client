@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Globe, LogOut, Moon, Sun, UserRound } from "lucide-react";
+import { Globe, Heart, LogOut, Moon, Sun, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,20 +9,20 @@ import { usePathname } from "next/navigation";
 import { authClient, useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
+import { useSavedStudios } from "@/lib/saved-studios";
 import { Logo } from "./logo";
 import { cn } from "cn";
 
 const links = [
   { label: "Explore studios", href: "/studios" },
   { label: "How it works", href: "/how-it-works" },
-  { label: "Add a studio", href: "/add-studio" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
 
 const menuLinks = [
-  { label: "Dashboard", href: "/dashboard" },
   { label: "My bookings", href: "/my-bookings" },
+  { label: "Saved studios", href: "/saved-studios" },
   { label: "Add a studio", href: "/add-studio" },
   { label: "Profile", href: "/profile" },
 ];
@@ -45,6 +45,7 @@ export function Navbar({ className }: { className?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggle } = useTheme();
+  const { count: savedCount } = useSavedStudios();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -113,6 +114,30 @@ export function Navbar({ className }: { className?: string }) {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Saved studios quick link */}
+          <Link
+            href="/saved-studios"
+            aria-label={`Saved studios (${savedCount})`}
+            className={cn(
+              "relative grid size-9 place-items-center rounded-full transition-colors",
+              pathname === "/saved-studios"
+                ? "bg-secondary text-foreground"
+                : "text-foreground/80 hover:bg-secondary/60 hover:text-foreground"
+            )}
+          >
+            <Heart
+              className={cn(
+                "size-4 transition-colors",
+                savedCount > 0 ? "fill-red-500 text-red-500" : ""
+              )}
+            />
+            {savedCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-xs">
+                {savedCount > 9 ? "9+" : savedCount}
+              </span>
+            )}
+          </Link>
+
           {/* Theme toggle — works on light and dark */}
           <Button
             type="button"
@@ -126,17 +151,6 @@ export function Navbar({ className }: { className?: string }) {
               <Moon className="size-4" />
             )}
           </Button>
-
-          {isLanding && !user ? (
-            <Button
-              type="button"
-              aria-label="Change language"
-              className="hidden items-center gap-1.5 rounded-full px-2 py-1.5 text-[13px] font-medium text-foreground/80 transition-colors hover:text-foreground sm:flex"
-            >
-              <Globe className="size-4" />
-              EN
-            </Button>
-          ) : null}
 
           {isPending && !user ? (
             // Skeleton chip while the session resolves, prevents auth flicker.
