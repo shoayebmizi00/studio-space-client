@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Globe, Heart, LogOut, Moon, Sun, UserRound } from "lucide-react";
+import { Heart, LogOut, Moon, Sun, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

@@ -10,8 +10,20 @@ export const metadata: Metadata = {
 export default async function StudiosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    location?: string;
+    q?: string;
+    capacity?: string;
+  }>;
 }) {
-  const { category } = await searchParams;
-  return <StudiosView initialCategory={category} />;
+  const { category, location, q, capacity } = await searchParams;
+  return (
+    <StudiosView
+      initialCategory={category}
+      initialLocation={location}
+      initialQuery={q}
+      initialCapacity={capacity ? Number(capacity) : undefined}
+    />
+  );
 }

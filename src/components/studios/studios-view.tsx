@@ -20,12 +20,26 @@ type CatalogStudio = StudioListing & {
   capacity: number;
 };
 
-export function StudiosView({ initialCategory }: { initialCategory?: string }) {
+interface StudiosViewProps {
+  initialCategory?: string;
+  initialLocation?: string;
+  initialQuery?: string;
+  initialCapacity?: number;
+}
+
+export function StudiosView({
+  initialCategory,
+  initialLocation,
+  initialQuery,
+  initialCapacity,
+}: StudiosViewProps) {
   const [filters, setFilters] = useState<FilterState>(() => ({
     ...defaultFilters,
     category: initialCategory || defaultFilters.category,
+    location: initialLocation || defaultFilters.location,
+    capacity: initialCapacity ?? defaultFilters.capacity,
   }));
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery || "");
   const [sort, setSort] = useState<SortOption>("Recommended");
   const { has, toggle } = useSavedStudios();
   const [view, setView] = useState<"grid" | "list">("grid");

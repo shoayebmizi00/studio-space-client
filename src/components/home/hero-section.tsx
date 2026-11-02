@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import type { StaticImageData } from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -88,19 +89,19 @@ export function HeroSection() {
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <a
-              href="#explore"
+            <Link
+              href="/studios"
               className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground transition-transform hover:brightness-95 active:scale-[0.98]"
             >
               Explore studios
               <ArrowRight className="size-3.5" />
-            </a>
-            <a
-              href="#how-it-works"
+            </Link>
+            <Link
+              href="/how-it-works"
               className="inline-flex h-10 items-center rounded-full border border-white/25 px-5 text-[13px] font-medium text-white transition-colors hover:bg-white/10"
             >
               How it works
-            </a>
+            </Link>
           </div>
 
           {/* Search card */}
