@@ -1,8 +1,18 @@
 import { ArrowRight } from "lucide-react";
 import { SectionHeader } from "./section-header";
 import { categories } from "@/lib/home-data";
+import { getStudios } from "@/lib/api";
+import type { StudioListing } from "@/lib/api";
 
-export function CategoriesSection() {
+export async function CategoriesSection() {
+  let studios: StudioListing[] | null = null;
+
+  try {
+    studios = await getStudios();
+  } catch {
+    studios = null;
+  }
+
   return (
     <section id="explore" className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
       <SectionHeader
@@ -11,7 +21,7 @@ export function CategoriesSection() {
         description="Explore our listing for every stage of production — filter by what your next shoot or event actually needs."
         action={
           <a
-            href="#explore"
+            href="/studios"
             className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground transition-opacity hover:opacity-70"
           >
             View all studios
@@ -24,7 +34,7 @@ export function CategoriesSection() {
         {categories.map((category) => (
           <a
             key={category.name}
-            href="#explore"
+            href="/studios"
             className="group flex items-start gap-3.5 rounded-2xl border border-border/70 bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-md hover:shadow-black/5"
           >
             <span className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-foreground/70 transition-colors group-hover:border-foreground/30 group-hover:text-foreground">
@@ -35,7 +45,9 @@ export function CategoriesSection() {
                 {category.name}
               </span>
               <span className="text-xs text-muted-foreground">
-                {category.count} studios
+                {studios
+                  ? `${studios.filter((studio) => studio.category === category.name).length} studios`
+                  : "Browse studios"}
               </span>
             </span>
           </a>

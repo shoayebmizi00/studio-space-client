@@ -8,7 +8,6 @@ import {
   CircleCheck,
   Clock,
   Heart,
-  Info,
   Lock,
   MapPin,
   Pencil,
@@ -18,9 +17,13 @@ import {
   Wrench,
 } from "lucide-react";
 import { Stars } from "@/components/studios/studio-card";
-import { getStudioDetail } from "@/lib/studio-details-data";
-import type { Studio } from "@/lib/studios-data";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "cn";
+import type { StudioListing } from "@/lib/api";
+import { createBooking } from "@/lib/bookings";
 
 const statCardClass = "rounded-xl border border-border/60 bg-card p-4";
 
@@ -36,40 +39,64 @@ function hoursBetween(start: string, end: string): number {
   return Number.isFinite(diff) && diff > 0 ? diff : 0;
 }
 
-function BookingWidget({ studio, deposit }: { studio: Studio; deposit: number }) {
+function BookingWidget({ studio, deposit }: { studio: StudioListing; deposit: number }) {
   const [date, setDate] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [details, setDetails] = useState("");
-  const [requested, setRequested] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
 
   const hours = hoursBetween(start, end);
-  const subtotal = studio.price * hours;
+  const price = studio.hourlyRate || studio.price || 0;
+  const capacity = studio.maxCapacity || studio.capacity || 0;
+  const subtotal = price * hours;
   const total = subtotal + deposit;
+
+  const submitBooking = async () => {
+    setSubmitting(true);
+    setRequestError(null);
+    try {
+      await createBooking({
+        studioId: studio._id,
+        date,
+        startTime: start,
+        endTime: end,
+        projectDetails: details,
+      });
+      setRequestSent(true);
+    } catch (error) {
+      setRequestError(error instanceof Error ? error.message : "Could not request this booking.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <aside className="rounded-2xl border border-border/60 bg-card p-6 lg:sticky lg:top-8">
       <div className="flex items-start justify-between gap-3">
         <p className="text-3xl font-semibold tracking-tight">
-          ${studio.price}
+          ${price}
           <span className="ml-1 text-xs font-normal text-muted-foreground">
             per hour · ${deposit} deposit
           </span>
         </p>
         <span className="mt-1 shrink-0 rounded-full bg-muted px-3 py-1 text-[11px] font-medium">
-          {studio.capacity} people
+          {capacity} people
         </span>
       </div>
 
       <div className="mt-6 flex flex-col gap-4">
         <div>
-          <label htmlFor="booking-date" className="mb-2 block text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
+          <Label htmlFor="booking-date" className="mb-2 block text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
             Date
-          </label>
+          </Label>
           <div className="relative">
-            <input
+            <Input
               id="booking-date"
               type="date"
+              min={new Date().toISOString().slice(0, 10)}
               value={date}
               onChange={(event) => setDate(event.target.value)}
               className="h-12 w-full rounded-xl border border-border/70 bg-background px-10 text-[13px] outline-none transition-colors focus:border-foreground/25"
@@ -80,11 +107,11 @@ function BookingWidget({ studio, deposit }: { studio: Studio; deposit: number })
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="booking-start" className="mb-2 block text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
+            <Label htmlFor="booking-start" className="mb-2 block text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
               Start
-            </label>
+            </Label>
             <div className="relative">
-              <input
+              <Input
                 id="booking-start"
                 type="time"
                 value={start}
@@ -95,11 +122,11 @@ function BookingWidget({ studio, deposit }: { studio: Studio; deposit: number })
             </div>
           </div>
           <div>
-            <label htmlFor="booking-end" className="mb-2 block text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
+            <Label htmlFor="booking-end" className="mb-2 block text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
               End
-            </label>
+            </Label>
             <div className="relative">
-              <input
+              <Input
                 id="booking-end"
                 type="time"
                 value={end}
@@ -112,10 +139,10 @@ function BookingWidget({ studio, deposit }: { studio: Studio; deposit: number })
         </div>
 
         <div>
-          <label htmlFor="booking-notes" className="mb-2 block text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
+          <Label htmlFor="booking-notes" className="mb-2 block text-[10px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
             Project details (optional)
-          </label>
-          <textarea
+          </Label>
+          <Textarea
             id="booking-notes"
             rows={3}
             value={details}
@@ -130,7 +157,7 @@ function BookingWidget({ studio, deposit }: { studio: Studio; deposit: number })
       <div className="mt-5 flex flex-col gap-2.5 border-t border-border/60 pt-4 text-[13px]">
         <p className="flex items-center justify-between text-muted-foreground">
           <span>
-            ${studio.price} × {hours} hr
+            ${price} × {hours} hr
           </span>
           <span className="text-foreground">${subtotal}</span>
         </p>
@@ -144,35 +171,33 @@ function BookingWidget({ studio, deposit }: { studio: Studio; deposit: number })
         </p>
       </div>
 
-      <button
+      <Button
         type="button"
-        disabled={requested}
-        onClick={() => setRequested(true)}
-        className={cn(
-          "mt-4 h-11 w-full rounded-xl text-[13px] font-semibold transition-all",
-          requested
-            ? "border border-border/70 bg-card text-foreground/80"
-            : "bg-primary text-primary-foreground hover:brightness-95 active:scale-[0.98]"
-        )}
+        disabled={submitting || requestSent || !date || !start || !end || hours <= 0}
+        onClick={submitBooking}
+        className="mt-4 h-11 w-full rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {requested ? "Request sent — the host will confirm" : "Request this workspace"}
-      </button>
+        {submitting ? "Sending request…" : requestSent ? "Request sent" : "Request this workspace"}
+      </Button>
+
+      {requestError ? (
+        <p className="mt-3 text-xs leading-relaxed text-red-600">
+          {requestError}{" "}
+          {requestError.toLowerCase().includes("sign in") ? (
+            <Link href="/sign-in" className="font-semibold underline underline-offset-2">Sign in</Link>
+          ) : null}
+        </p>
+      ) : null}
+      {requestSent ? (
+        <Link href="/my-bookings" className="mt-3 inline-block text-xs font-medium underline underline-offset-2">
+          View my bookings
+        </Link>
+      ) : null}
 
       <div className="mt-4 flex flex-col gap-2.5 border-t border-border/60 pt-4">
         <p className="flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
           <Lock className="mt-0.5 size-3 shrink-0" />
-          Availability is validated on our server before a request is created. The
-          host confirms before anything is charged.
-        </p>
-        <p className="flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
-          <ShieldCheck className="mt-0.5 size-3 shrink-0" />
-          Development payment simulation — no card is charged while the gateway is
-          being connected.
-        </p>
-        <p className="flex items-start gap-2 text-[11px] leading-relaxed text-muted-foreground">
-          <Info className="mt-0.5 size-3 shrink-0" />
-          Flexible — free cancellation up to 24 hours before the session. Inside 24
-          hours the deposit is retained.
+          This request is pending until the host confirms it. No payment is taken here.
         </p>
       </div>
     </aside>
@@ -183,19 +208,48 @@ function BookingWidget({ studio, deposit }: { studio: Studio; deposit: number })
 /* View                                                                */
 /* ------------------------------------------------------------------ */
 
-export function StudioDetailsView({ studio }: { studio: Studio }) {
-  const detail = getStudioDetail(studio);
+export function StudioDetailsView({ studio }: { studio: StudioListing | null }) {
   const [activePhoto, setActivePhoto] = useState(0);
   const [saved, setSaved] = useState(false);
 
-  const stats = [
-    { icon: Users, label: "Capacity", value: `${studio.capacity} people` },
-    { icon: Pencil, label: "Space type", value: detail.spaceType },
-    { icon: Sparkles, label: "From", value: detail.rateBasis },
-    { icon: ShieldCheck, label: "Deposit", value: "Refundable" },
-  ];
+  if (!studio) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center bg-surface-alt px-4 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">Studio not found</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This studio may have been removed or the ID is invalid.
+        </p>
+        <Link
+          href="/studios"
+          className="mt-6 inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground transition-transform hover:brightness-95 active:scale-[0.98]"
+        >
+          Explore all studios
+        </Link>
+      </div>
+    );
+  }
 
-  const maxDist = Math.max(1, ...detail.distribution);
+  // Map API StudioListing shape to the detail format expected by the view
+  const detail = {
+    about: [studio.fullDescription || studio.shortDescription].filter(Boolean),
+    gallery: [studio.coverImage, ...(studio.gallery || [])].filter(
+      (image): image is string => Boolean(image)
+    ),
+    amenities: studio.amenities || [],
+    equipment: studio.equipment || [],
+    city: studio.city || "",
+    street: studio.streetAddress || "",
+    deposit: studio.securityDeposit || 0,
+    rules: studio.rules,
+    cancellation: studio.cancellationPolicy,
+  };
+
+  const stats = [
+    { icon: Users, label: "Capacity", value: `${studio.maxCapacity || studio.capacity} people` },
+    { icon: Pencil, label: "Space type", value: studio.category || "" },
+    { icon: Sparkles, label: "From", value: `${studio.hourlyRate || studio.price}/hour` },
+    { icon: ShieldCheck, label: "Deposit", value: `Refundable $${studio.securityDeposit || 0}` },
+  ];
 
   return (
     <div className="bg-surface-alt">
@@ -216,32 +270,26 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
           <div>
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-border/70 bg-card px-3 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-foreground/70">
-                {studio.badge}
+                {studio.category}
               </span>
-              {detail.verified ? (
-                <span className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-foreground">
-                  <CircleCheck className="size-3" />
-                  Verified listing
-                </span>
-              ) : null}
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight">{studio.name}</h1>
             <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <MapPin className="size-3.5" />
-                {studio.location}
+                {[studio.city, studio.country].filter(Boolean).join(", ")}
               </span>
               <span className="flex items-center gap-1.5">
-                <Stars rating={studio.rating} />
+                <Stars rating={studio.rating || 0} />
                 <span className="font-semibold text-foreground">
-                  {studio.rating.toFixed(1)}
+                  {(studio.rating || 0).toFixed(1)}
                 </span>
                 <span>({studio.reviews})</span>
               </span>
             </p>
           </div>
 
-          <button
+          <Button
             type="button"
             onClick={() => setSaved((prev) => !prev)}
             className="flex h-10 items-center gap-2 rounded-full border border-border/70 bg-card px-4 text-[13px] font-medium transition-colors hover:border-foreground/25"
@@ -253,16 +301,17 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
               )}
             />
             {saved ? "Saved" : "Save studio"}
-          </button>
+          </Button>
         </div>
 
         {/* Gallery */}
         <div className="mt-6 grid grid-cols-[3fr_1.2fr] items-stretch gap-3 max-md:grid-cols-1">
-          <div className="relative aspect-[21/9] max-md:aspect-[16/10] overflow-hidden rounded-2xl">
+          <div className="relative aspect-21/9 max-md:aspect-16/10 overflow-hidden rounded-2xl">
             <Image
               src={detail.gallery[activePhoto]}
               alt={studio.name}
               fill
+              unoptimized
               sizes="(max-width: 768px) 100vw, 66vw"
               className="object-cover"
             />
@@ -276,8 +325,8 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
             </span>
           </div>
           <div className="grid grid-rows-2 gap-3 max-md:grid-rows-2 max-md:hidden">
-            {detail.gallery.map((photo, index) => (
-              <button
+            {detail.gallery.map((photo: string, index: number) => (
+              <Button
                 key={index}
                 type="button"
                 aria-label={`Show photo ${index + 1}`}
@@ -291,10 +340,11 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
                   src={photo}
                   alt={`${studio.name} photo ${index + 1}`}
                   fill
+                  unoptimized
                   sizes="20vw"
                   className="object-cover"
                 />
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -305,7 +355,7 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
             {/* About */}
             <section>
               <h2 className="text-2xl font-semibold tracking-tight">About this space</h2>
-              {detail.about.map((paragraph, index) => (
+              {detail.about.map((paragraph: string, index: number) => (
                 <p key={index} className="mt-4 text-[13px] leading-relaxed text-foreground/85">
                   {paragraph}
                 </p>
@@ -329,7 +379,7 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
             <section>
               <h2 className="text-2xl font-semibold tracking-tight">Amenities</h2>
               <div className="mt-4 flex flex-wrap gap-3">
-                {detail.amenities.map((amenity) => (
+                {detail.amenities.map((amenity: string) => (
                   <span
                     key={amenity}
                     className="flex items-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-2.5 text-[13px]"
@@ -348,7 +398,7 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
                 Equipment included
               </h2>
               <div className="mt-4 flex flex-wrap gap-2">
-                {detail.equipment.map((item) => (
+                {detail.equipment.map((item: string) => (
                   <span
                     key={item}
                     className="rounded-full border border-border/60 bg-card px-3.5 py-1.5 text-xs"
@@ -375,26 +425,6 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
               </div>
             </section>
 
-            {/* Host */}
-            <section>
-              <h2 className="text-2xl font-semibold tracking-tight">
-                Hosted by {detail.host.name}
-              </h2>
-              <div className="mt-4 flex items-center gap-4 rounded-2xl border border-border/60 bg-card p-5">
-                <span className="grid size-14 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold">
-                  {detail.host.initials}
-                </span>
-                <div>
-                  <p className="text-[13px] font-semibold tracking-tight">{detail.host.name}</p>
-                  <p className="mt-0.5 text-[13px] text-muted-foreground">{detail.host.since}</p>
-                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <CircleCheck className="size-3.5" />
-                    {detail.host.note}
-                  </p>
-                </div>
-              </div>
-            </section>
-
             {/* Location */}
             <section>
               <h2 className="text-2xl font-semibold tracking-tight">Location</h2>
@@ -404,7 +434,6 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
                   {detail.city}
                 </p>
                 <p className="mt-1.5 text-[13px] text-muted-foreground">{detail.street}</p>
-                <p className="mt-3 text-xs text-muted-foreground">{detail.accessNote}</p>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                     `${detail.street}, ${detail.city}`
@@ -418,65 +447,17 @@ export function StudioDetailsView({ studio }: { studio: Studio }) {
               </div>
             </section>
 
-            {/* Reviews */}
-            <section>
-              <h2 className="text-2xl font-semibold tracking-tight">Reviews</h2>
-              <div className="mt-4 rounded-2xl border border-border/60 bg-card p-6">
-                <div className="flex items-center gap-8 max-sm:flex-col max-sm:items-start">
-                  <div className="flex flex-col items-start gap-1.5">
-                    <span className="text-4xl font-semibold tracking-tight">
-                      {studio.rating.toFixed(1)}
-                    </span>
-                    <Stars rating={studio.rating} />
-                    <span className="text-xs text-muted-foreground">
-                      {studio.reviews} reviews
-                    </span>
-                  </div>
-                  <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    {detail.distribution
-                      .map((count, index) => ({ stars: 5 - index, count }))
-                      .map((row) => (
-                        <div key={row.stars} className="flex items-center gap-3">
-                          <span className="w-6 shrink-0 text-xs text-muted-foreground">
-                            {row.stars}★
-                          </span>
-                          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                            <span
-                              className="block h-full rounded-full bg-foreground transition-all"
-                              style={{ width: `${(row.count / maxDist) * 100}%` }}
-                            />
-                          </span>
-                          <span className="w-4 shrink-0 text-right text-xs text-muted-foreground">
-                            {row.count}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
+            {studio.reviews ? (
+              <section>
+                <h2 className="text-2xl font-semibold tracking-tight">Reviews</h2>
+                <div className="mt-4 flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-6">
+                  <Stars rating={studio.rating || 0} />
+                  <span className="text-sm font-semibold">
+                    {(studio.rating || 0).toFixed(1)} · {studio.reviews} reviews
+                  </span>
                 </div>
-              </div>
-
-              <div className="mt-5 flex flex-col gap-5">
-                {detail.reviews.map((review) => (
-                  <article key={review.name} className="flex gap-4">
-                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-[11px] font-semibold">
-                      {review.initials}
-                    </span>
-                    <div className="min-w-0 flex-1 border-b border-border/50 pb-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-[13px] font-semibold tracking-tight">{review.name}</p>
-                        <p className="text-xs text-muted-foreground">{review.date}</p>
-                      </div>
-                      <div className="mt-1">
-                        <Stars rating={review.rating} />
-                      </div>
-                      <p className="mt-2.5 text-[13px] leading-relaxed text-foreground/85">
-                        {review.text}
-                      </p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
+              </section>
+            ) : null}
           </div>
 
           {/* Sticky booking panel */}

@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Lock, Mail } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AuthShell } from "./auth-shell";
 
 /* Google's multicolour "G" as an inline path set */
@@ -29,6 +32,13 @@ const googleMark = (
   </svg>
 );
 
+function getCallbackUrl(): string {
+  const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl");
+  return callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
+    ? callbackUrl
+    : "/studios";
+}
+
 /* ------------------------------------------------------------------ */
 /* View                                                                */
 /* ------------------------------------------------------------------ */
@@ -44,22 +54,29 @@ export function SignInView() {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    try {
+      const { error: authError } = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL: getCallbackUrl(),
+      });
 
-    const { error: authError } = await authClient.signIn.email({
-      email,
-      password,
-      callbackURL: "/studios",
-    });
+      if (authError) {
+        setError(authError.message || "Could not sign in. Check your email and password.");
+        return;
+      }
 
-    if (authError) {
+      router.replace(getCallbackUrl());
+      router.refresh();
+    } catch (authError) {
       setError(
-        authError.message || "Could not sign in. Is the auth server running?"
+        authError instanceof Error
+          ? authError.message
+          : "Could not sign in. Check your connection and try again."
       );
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.push("/studios");
   };
 
   const googleSignIn = async () => {
@@ -68,11 +85,16 @@ export function SignInView() {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/studios",
+        callbackURL: getCallbackUrl(),
       });
       // Redirects to the provider — nothing to await afterwards.
-    } catch {
-      setError("Google sign-in is not available. Check the server setup.");
+    } catch (authError) {
+      setError(
+        authError instanceof Error
+          ? authError.message
+          : "Google sign-in is not available. Check the server setup."
+      );
+    } finally {
       setLoading(false);
     }
   };
@@ -93,7 +115,7 @@ export function SignInView() {
       </p>
 
       <div className="mt-7 rounded-3xl border border-border/60 bg-card p-6 sm:p-7">
-        <button
+        <Button
           type="button"
           disabled={loading}
           onClick={googleSignIn}
@@ -101,7 +123,7 @@ export function SignInView() {
         >
           {googleMark}
           Continue with Google
-        </button>
+        </Button>
 
         <div className="my-5 flex items-center gap-4">
           <span className="h-px flex-1 bg-border" />
@@ -113,11 +135,11 @@ export function SignInView() {
 
         <form onSubmit={emailSignIn} className="flex flex-col gap-4">
           <div>
-            <label htmlFor="email" className="mb-2 block text-[13px] font-semibold tracking-tight">
+            <Label htmlFor="email" className="mb-2 block text-[13px] font-semibold tracking-tight">
               Email
-            </label>
+            </Label>
             <div className="relative">
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
@@ -134,9 +156,9 @@ export function SignInView() {
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label htmlFor="password" className="text-[13px] font-semibold tracking-tight">
+              <Label htmlFor="password" className="text-[13px] font-semibold tracking-tight">
                 Password
-              </label>
+              </Label>
               <a
                 href="#"
                 className="text-xs font-medium text-[#9db922] transition-colors hover:text-[#8aa41c]"
@@ -145,7 +167,7 @@ export function SignInView() {
               </a>
             </div>
             <div className="relative">
-              <input
+              <Input
                 id="password"
                 name="password"
                 type="password"
@@ -164,13 +186,13 @@ export function SignInView() {
             <p className="text-xs leading-relaxed text-red-600">{error}</p>
           ) : null}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
             className="mt-1 h-11 w-full rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-60"
           >
             {loading ? "Signing in…" : "Sign in"}
-          </button>
+          </Button>
         </form>
       </div>
 

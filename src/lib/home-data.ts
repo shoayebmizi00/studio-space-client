@@ -55,96 +55,17 @@ export const images: Record<
 export type Category = {
   icon: LucideIcon;
   name: string;
-  count: number;
 };
 
 export const categories: Category[] = [
-  { icon: Camera, name: "Photography", count: 14 },
-  { icon: Clapperboard, name: "Film stage", count: 7 },
-  { icon: Mic, name: "Podcast", count: 9 },
-  { icon: Music, name: "Music studio", count: 11 },
-  { icon: Palette, name: "Art workshop", count: 6 },
-  { icon: Video, name: "Content studio", count: 12 },
-  { icon: Drum, name: "Rehearsal", count: 5 },
-  { icon: CalendarDays, name: "Event space", count: 8 },
-];
-
-/* ------------------------------------------------------------------ */
-/* Featured spaces                                                     */
-/* ------------------------------------------------------------------ */
-
-export type Space = {
-  name: string;
-  location: string;
-  badge: string;
-  image: StaticImageData;
-  rating: number;
-  reviews: number;
-  price: number;
-  guests: number;
-};
-
-export const featuredSpaces: Space[] = [
-  {
-    name: "Astral Arora",
-    location: "Los Angeles, United States",
-    badge: "New",
-    image: images.astral,
-    rating: 4.9,
-    reviews: 132,
-    price: 88,
-    guests: 4,
-  },
-  {
-    name: "Daylight Loft Studio",
-    location: "Los Angeles, United States",
-    badge: "Photography",
-    image: images.daylight,
-    rating: 4.8,
-    reviews: 56,
-    price: 95,
-    guests: 6,
-  },
-  {
-    name: "Foundry Production Hall",
-    location: "Los Angeles, United States",
-    badge: "Event space",
-    image: images.foundry,
-    rating: 5.0,
-    reviews: 48,
-    price: 349,
-    guests: 40,
-  },
-  {
-    name: "Studio Ristorare",
-    location: "Los Angeles, United States",
-    badge: "Content studio",
-    image: images.ristorare,
-    rating: 4.7,
-    reviews: 89,
-    price: 65,
-    guests: 3,
-  },
-  {
-    name: "Northbound Sound Stage",
-    location: "Los Angeles, United States",
-    badge: "Green screen",
-    image: images.northbound,
-    rating: 4.9,
-    reviews: 61,
-    price: 140,
-    guests: 8,
-  },
-  {
-    name: "Signal Room Podcast Studio",
-    location: "Los Angeles, United States",
-    badge: "Podcast",
-    image: images.signal,
-    rating: 5.0,
-    reviews: 73,
-    price: 45,
-    guests: 2,
-  },
+  { icon: Camera, name: "Photography" },
+  { icon: Clapperboard, name: "Film stage" },
+  { icon: Mic, name: "Podcast" },
+  { icon: Music, name: "Music studio" },
+  { icon: Palette, name: "Art workshop" },
+  { icon: Video, name: "Content studio" },
+  { icon: Drum, name: "Rehearsal" },
+  { icon: CalendarDays, name: "Event space" },
 ];
 
 /* ------------------------------------------------------------------ */

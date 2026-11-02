@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import { authClient, useSession } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import { Logo } from "./logo";
 import { cn } from "cn";
@@ -113,7 +114,7 @@ export function Navbar({ className }: { className?: string }) {
 
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Theme toggle — works on light and dark */}
-          <button
+          <Button
             type="button"
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
             onClick={toggle}
@@ -124,17 +125,17 @@ export function Navbar({ className }: { className?: string }) {
             ) : (
               <Moon className="size-4" />
             )}
-          </button>
+          </Button>
 
           {isLanding && !user ? (
-            <button
+            <Button
               type="button"
               aria-label="Change language"
               className="hidden items-center gap-1.5 rounded-full px-2 py-1.5 text-[13px] font-medium text-foreground/80 transition-colors hover:text-foreground sm:flex"
             >
               <Globe className="size-4" />
               EN
-            </button>
+            </Button>
           ) : null}
 
           {isPending && !user ? (
@@ -142,7 +143,7 @@ export function Navbar({ className }: { className?: string }) {
             <span className="size-8 rounded-full bg-muted" aria-hidden />
           ) : user ? (
             <div ref={menuRef} className="relative">
-              <button
+              <Button
                 type="button"
                 aria-label="Account menu"
                 aria-expanded={menuOpen}
@@ -166,7 +167,7 @@ export function Navbar({ className }: { className?: string }) {
                 <span className="hidden max-w-24 truncate text-[13px] font-medium sm:inline">
                   {(user.name ?? user.email).split(" ")[0]}
                 </span>
-              </button>
+              </Button>
 
               {menuOpen ? (
                 <div className="absolute right-0 top-full z-50 mt-2 w-48 overflow-hidden rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg">
@@ -191,14 +192,14 @@ export function Navbar({ className }: { className?: string }) {
                     </Link>
                   ))}
                   <div className="my-1 h-px bg-border" />
-                  <button
+                  <Button
                     type="button"
                     onClick={signOut}
                     className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-red-600 transition-colors hover:bg-secondary"
                   >
                     <LogOut className="size-3.5" />
                     Sign out
-                  </button>
+                  </Button>
                 </div>
               ) : null}
             </div>

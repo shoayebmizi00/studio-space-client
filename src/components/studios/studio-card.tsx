@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, MapPin, Users, Star } from "lucide-react";
-import type { Studio } from "@/lib/studios-data";
 import { cn } from "cn";
+import { Button } from "@/components/ui/button";
+import type { StudioListing } from "@/lib/api";
 
 export function Stars({ rating }: { rating: number }) {
   const full = Math.floor(rating);
@@ -30,22 +31,25 @@ export function Stars({ rating }: { rating: number }) {
   );
 }
 
+interface StudioCardProps {
+  studio: StudioListing;
+  isFavorite: boolean;
+  onToggleFavorite: (id: string) => void;
+}
+
 export function StudioCard({
   studio,
   isFavorite,
   onToggleFavorite,
-}: {
-  studio: Studio;
-  isFavorite: boolean;
-  onToggleFavorite: (id: string) => void;
-}) {
+}: StudioCardProps) {
   return (
     <article className="group flex flex-col gap-3">
-      <div className="relative aspect-[10/9] overflow-hidden rounded-2xl">
+      <div className="relative aspect-10/9 overflow-hidden rounded-2xl">
         <Image
-          src={studio.image}
+          src={studio.coverImage || studio.gallery?.[0] || "/placeholder.jpg"}
           alt={studio.name}
           fill
+          unoptimized
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
         />
@@ -60,16 +64,16 @@ export function StudioCard({
           className="absolute inset-0"
         />
 
-        <button
+        <Button
           type="button"
           aria-label={isFavorite ? "Remove from saved" : "Save studio"}
-          onClick={() => onToggleFavorite(studio.id)}
+          onClick={() => onToggleFavorite(studio._id || studio.id || "")}
           className="absolute right-3 top-3 grid size-8 place-items-center rounded-full bg-white/90 text-foreground backdrop-blur transition-transform hover:scale-105"
         >
           <Heart
             className={cn("size-3.5 transition-colors", isFavorite && "fill-red-500 text-red-500")}
           />
-        </button>
+        </Button>
       </div>
 
       {/* Name + rating */}
@@ -83,7 +87,7 @@ export function StudioCard({
           </Link>
         </h3>
         <span className="flex shrink-0 items-center gap-1.5">
-          <Stars rating={studio.rating} />
+          <Stars rating={studio.rating || 0} />
           <span className="text-xs text-muted-foreground">({studio.reviews})</span>
         </span>
       </div>
@@ -91,18 +95,18 @@ export function StudioCard({
       {/* Location */}
       <p className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <MapPin className="size-3.5" />
-        {studio.location}
+        {studio.city}, {studio.country}
       </p>
 
       {/* Price + capacity */}
       <div className="flex items-end justify-between border-t border-border/50 pt-3">
         <p className="text-[15px] font-semibold tracking-tight">
-          ${studio.price}
+          ${studio.hourlyRate || studio.price}
           <span className="text-xs font-normal text-muted-foreground"> /hour</span>
         </p>
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Users className="size-3.5" />
-          up to {studio.capacity}
+          up to {(studio.maxCapacity || studio.capacity)}
         </p>
       </div>
     </article>

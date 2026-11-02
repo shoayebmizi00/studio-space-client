@@ -2,12 +2,16 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   CircleUserRound,
   ImagePlus,
+  Link2,
 } from "lucide-react";
 import {
   STEPS,
@@ -33,13 +37,53 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 /* Small helpers                                                       */
 /* ------------------------------------------------------------------ */
 
-function readImageAsDataUrl(file: File): Promise<string> {
+const MAX_IMAGE_DIMENSION = 1920;
+const IMAGE_QUALITY = 0.82;
+
+async function readImageAsDataUrl(file: File): Promise<string> {
+  const image = await createImageBitmap(file);
+  const scale = Math.min(
+    1,
+    MAX_IMAGE_DIMENSION / Math.max(image.width, image.height)
+  );
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(image.width * scale);
+  canvas.height = Math.round(image.height * scale);
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    image.close();
+    throw new Error("Could not process this image.");
+  }
+
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  image.close();
+
+  const compressed = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Could not compress this image."))),
+      "image/jpeg",
+      IMAGE_QUALITY
+    );
+  });
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
+    reader.onerror = () => reject(new Error("Could not read the processed image."));
+    reader.readAsDataURL(compressed);
   });
+}
+
+function isHttpImageUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function ImageTile({
@@ -55,14 +99,14 @@ function ImageTile({
     <div className="group relative size-28 overflow-hidden rounded-xl border border-border/70">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt={label} className="size-full object-cover" />
-      <button
+      <Button
         type="button"
         aria-label={`Remove ${label}`}
         onClick={onRemove}
         className="absolute right-1 top-1 grid size-6 place-items-center rounded-full bg-white/90 text-[10px] text-foreground opacity-0 transition-opacity group-hover:opacity-100"
       >
         ✕
-      </button>
+      </Button>
     </div>
   );
 }
@@ -72,6 +116,7 @@ function ImageTile({
 /* ------------------------------------------------------------------ */
 
 export function AddStudioView() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<AddStudioForm>(initialForm);
   // Amenities start pre-selected to mirror the reference state.
@@ -91,6 +136,8 @@ export function AddStudioView() {
   ]);
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [gallery, setGallery] = useState<string[]>([]);
+  const [coverImageUrl, setCoverImageUrl] = useState("");
+  const [galleryImageUrl, setGalleryImageUrl] = useState("");
   const [customEquipment, setCustomEquipment] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,15 +158,59 @@ export function AddStudioView() {
 
   const pickCover = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) setCoverImage(await readImageAsDataUrl(file));
+    if (!file) return;
+
+    try {
+      setCoverImage(await readImageAsDataUrl(file));
+      setError(null);
+    } catch {
+      setError("Could not process that image. Try a JPEG, PNG, or WebP file.");
+    }
   };
 
   const pickGallery = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
     if (files.length === 0) return;
     const remaining = 6 - gallery.length;
-    const dataUrls = await Promise.all(files.slice(0, remaining).map(readImageAsDataUrl));
-    setGallery((prev) => [...prev, ...dataUrls].slice(0, 6));
+    try {
+      const dataUrls = await Promise.all(files.slice(0, remaining).map(readImageAsDataUrl));
+      setGallery((prev) => [...prev, ...dataUrls].slice(0, 6));
+      setError(null);
+    } catch {
+      setError("Could not process those images. Try JPEG, PNG, or WebP files.");
+    }
+  };
+
+  const useCoverImageUrl = () => {
+    const url = coverImageUrl.trim();
+    if (!isHttpImageUrl(url)) {
+      setError("Enter a valid image link beginning with http:// or https://.");
+      return;
+    }
+
+    setCoverImage(url);
+    setCoverImageUrl("");
+    setError(null);
+  };
+
+  const addGalleryImageUrl = () => {
+    const url = galleryImageUrl.trim();
+    if (!isHttpImageUrl(url)) {
+      setError("Enter a valid image link beginning with http:// or https://.");
+      return;
+    }
+    if (gallery.length >= 6) {
+      setError("The gallery can contain up to 6 images.");
+      return;
+    }
+    if (gallery.includes(url)) {
+      setError("That image is already in the gallery.");
+      return;
+    }
+
+    setGallery((prev) => [...prev, url]);
+    setGalleryImageUrl("");
+    setError(null);
   };
 
   const addCustomEquipment = () => {
@@ -131,6 +222,12 @@ export function AddStudioView() {
   };
 
   const publish = async () => {
+    if (!form.name.trim()) {
+      setError("Add a studio name before publishing.");
+      setStep(1);
+      return;
+    }
+
     setSending(true);
     setError(null);
     try {
@@ -156,6 +253,7 @@ export function AddStudioView() {
 
       console.log(data);
       setDone(true);
+      router.replace("/");
     } catch (err) {
       setError(
         err instanceof Error && !(err instanceof TypeError)
@@ -380,26 +478,43 @@ export function AddStudioView() {
                     label="cover image"
                     onRemove={() => setCoverImage(null)}
                   />
-                ) : (
-                  <button
+                ) : null}
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <Button
                     type="button"
-                    aria-label="Upload cover image"
+                    aria-label={coverImage ? "Replace cover image" : "Upload cover image"}
                     onClick={() => coverInputRef?.current?.click()}
-                    className="group grid size-28 place-items-center rounded-xl border border-dashed border-border bg-background transition-colors hover:border-foreground/30"
+                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-background px-3 text-[13px] transition-colors hover:border-foreground/30"
                   >
-                    <span className="flex flex-col items-center gap-2 px-2 text-center">
-                      <ImagePlus className="size-5 text-foreground/60 transition-colors group-hover:text-foreground" />
-                      <span className="text-[11px] text-foreground/70">Add photo</span>
-                    </span>
-                  </button>
-                )}
-                <input
+                    <ImagePlus className="size-4" />
+                    {coverImage ? "Replace photo" : "Upload photo"}
+                  </Button>
+                </div>
+                <Input
                   ref={coverInputRef}
                   type="file"
                   accept="image/*"
                   hidden
                   onChange={pickCover}
                 />
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <Input
+                    type="url"
+                    value={coverImageUrl}
+                    onChange={(event) => setCoverImageUrl(event.target.value)}
+                    placeholder="Paste cover image URL"
+                    aria-label="Cover image URL"
+                    className="h-10 min-w-0 flex-1 rounded-xl border border-border/70 bg-background px-3.5 text-[13px] outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/25"
+                  />
+                  <Button
+                    type="button"
+                    onClick={useCoverImageUrl}
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border/70 bg-card px-3 text-[13px] font-medium transition-colors hover:border-foreground/25"
+                  >
+                    <Link2 className="size-4" />
+                    Use link
+                  </Button>
+                </div>
               </FieldShell>
 
               <FieldShell
@@ -418,20 +533,18 @@ export function AddStudioView() {
                     />
                   ))}
                   {gallery.length < 6 ? (
-                    <button
+                    <Button
                       type="button"
                       aria-label="Add gallery photos"
                       onClick={() => galleryInputRef?.current?.click()}
-                      className="group grid size-28 place-items-center rounded-xl border border-dashed border-border bg-background transition-colors hover:border-foreground/30"
+                      className="inline-flex h-10 items-center gap-2 rounded-xl border border-border/70 bg-background px-3 text-[13px] transition-colors hover:border-foreground/30"
                     >
-                      <span className="flex flex-col items-center gap-2 px-2 text-center">
-                        <ImagePlus className="size-5 text-foreground/60 transition-colors group-hover:text-foreground" />
-                        <span className="text-[11px] text-foreground/70">Add photos</span>
-                      </span>
-                    </button>
+                      <ImagePlus className="size-4" />
+                      Upload photos
+                    </Button>
                   ) : null}
                 </div>
-                <input
+                <Input
                   ref={galleryInputRef}
                   type="file"
                   accept="image/*"
@@ -439,6 +552,26 @@ export function AddStudioView() {
                   hidden
                   onChange={pickGallery}
                 />
+                {gallery.length < 6 ? (
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <Input
+                      type="url"
+                      value={galleryImageUrl}
+                      onChange={(event) => setGalleryImageUrl(event.target.value)}
+                      placeholder="Paste a gallery image URL"
+                      aria-label="Gallery image URL"
+                      className="h-10 min-w-0 flex-1 rounded-xl border border-border/70 bg-background px-3.5 text-[13px] outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/25"
+                    />
+                    <Button
+                      type="button"
+                      onClick={addGalleryImageUrl}
+                      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border/70 bg-card px-3 text-[13px] font-medium transition-colors hover:border-foreground/25"
+                    >
+                      <Link2 className="size-4" />
+                      Add link
+                    </Button>
+                  </div>
+                ) : null}
               </FieldShell>
 
               <InfoNote>
@@ -491,7 +624,7 @@ export function AddStudioView() {
               </div>
 
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   value={customEquipment}
                   onChange={(event) => setCustomEquipment(event.target.value)}
@@ -504,14 +637,14 @@ export function AddStudioView() {
                   placeholder="Add another piece of kit"
                   className="h-11 flex-1 rounded-xl border border-border/70 bg-background px-3.5 text-[13px] outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/25"
                 />
-                <button
+                <Button
                   type="button"
                   aria-label="Add custom equipment"
                   onClick={addCustomEquipment}
                   className="grid size-11 shrink-0 place-items-center rounded-xl border border-border/70 bg-card text-foreground/80 transition-colors hover:border-foreground/25"
                 >
                   +
-                </button>
+                </Button>
               </div>
             </>
           ) : null}
@@ -545,7 +678,7 @@ export function AddStudioView() {
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border/60 p-5">
-          <button
+          <Button
             type="button"
             disabled={step === 1 || sending}
             onClick={() => setStep((prev) => Math.max(1, prev - 1))}
@@ -553,19 +686,19 @@ export function AddStudioView() {
           >
             <ArrowLeft className="size-3.5" />
             Back
-          </button>
+          </Button>
 
           {step < TOTAL_STEPS ? (
-            <button
+            <Button
               type="button"
               onClick={() => setStep((prev) => Math.min(TOTAL_STEPS, prev + 1))}
               className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground transition-transform hover:brightness-95 active:scale-[0.98]"
             >
               Continue
               <ArrowRight className="size-3.5" />
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
               disabled={sending}
               onClick={publish}
@@ -573,7 +706,7 @@ export function AddStudioView() {
             >
               <Check className="size-3.5" />
               {sending ? "Publishing…" : "Publish studio"}
-            </button>
+            </Button>
           )}
         </div>
       </div>

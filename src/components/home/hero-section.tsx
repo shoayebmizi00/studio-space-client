@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { StaticImageData } from "next/image";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { images } from "@/lib/home-data";
 import { SearchBar } from "./search-bar";
 
@@ -17,7 +18,7 @@ const slides: Slide[] = [
   {
     image: images.hero,
     alt: "Photo studio with lighting rigs",
-    eyebrow: "75+ Studios & Spaces",
+    eyebrow: "Creative studios by local hosts",
   },
   {
     image: images.ristorare,
@@ -27,7 +28,7 @@ const slides: Slide[] = [
   {
     image: images.signal,
     alt: "Podcast room with two microphones",
-    eyebrow: "Podcast rooms, live availability",
+    eyebrow: "Podcast rooms for recording",
   },
 ];
 
@@ -68,7 +69,7 @@ export function HeroSection() {
             }`}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/70" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/30 to-black/70" />
 
         {/* Content */}
         <div className="relative flex flex-col items-start px-5 pb-8 pt-14 sm:px-10 sm:pt-20 lg:px-14 lg:pt-24">
@@ -82,8 +83,8 @@ export function HeroSection() {
           </h1>
 
           <p className="mt-5 max-w-md text-sm leading-relaxed text-white/70">
-            Book photo, film, music, content, and podcast studios by the hour —
-            with live pricing, instant booking, and real availability.
+            Explore photo, film, music, content, and podcast studios with host-provided
+            details and hourly pricing.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -111,7 +112,7 @@ export function HeroSection() {
           <div className="mt-4 flex w-full items-center justify-between">
             <div className="flex items-center gap-1.5 pl-1">
               {slides.map((slide, slideIndex) => (
-                <button
+                <Button
                   key={slide.alt}
                   type="button"
                   aria-label={`Go to slide ${slideIndex + 1}`}
@@ -124,22 +125,22 @@ export function HeroSection() {
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
                 aria-label="Previous slide"
                 onClick={() => goTo(index - 1)}
                 className="grid size-8 place-items-center rounded-full border border-white/25 text-white/80 transition-colors hover:bg-white/10"
               >
                 <ChevronLeft className="size-4" />
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 aria-label="Next slide"
                 onClick={() => goTo(index + 1)}
                 className="grid size-8 place-items-center rounded-full border border-white/25 text-white/80 transition-colors hover:bg-white/10"
               >
                 <ChevronRight className="size-4" />
-              </button>
+              </Button>
             </div>
           </div>
         </div>

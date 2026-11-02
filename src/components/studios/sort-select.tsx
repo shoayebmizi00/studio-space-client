@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "cn";
 
 export const sortOptions = [
@@ -25,7 +26,7 @@ export function SortSelect({
 
   return (
     <div className="relative">
-      <button
+      <Button
         type="button"
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -39,7 +40,7 @@ export function SortSelect({
             open && "rotate-180"
           )}
         />
-      </button>
+      </Button>
 
       {open ? (
         <>
@@ -58,7 +59,7 @@ export function SortSelect({
               const active = option === value;
               return (
                 <li key={option}>
-                  <button
+                  <Button
                     type="button"
                     role="option"
                     aria-selected={active}
@@ -75,7 +76,7 @@ export function SortSelect({
                         active ? "text-foreground" : "opacity-0"
                       )}
                     />
-                  </button>
+                  </Button>
                 </li>
               );
             })}

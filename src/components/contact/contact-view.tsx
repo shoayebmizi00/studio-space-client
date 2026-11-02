@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { Mail, Phone, MapPin, MessageSquare, Check } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
 
 const eyebrow = "mb-3 text-[11px] font-medium uppercase tracking-[0.25em] text-muted-foreground";
 
@@ -92,10 +97,10 @@ export function ContactView() {
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="name" className={fieldLabel}>
+              <Label htmlFor="name" className={fieldLabel}>
                 Full name
-              </label>
-              <input
+              </Label>
+              <Input
                 id="name"
                 name="name"
                 type="text"
@@ -105,10 +110,10 @@ export function ContactView() {
               />
             </div>
             <div>
-              <label htmlFor="email" className={fieldLabel}>
+              <Label htmlFor="email" className={fieldLabel}>
                 Email
-              </label>
-              <input
+              </Label>
+              <Input
                 id="email"
                 name="email"
                 type="email"
@@ -120,15 +125,22 @@ export function ContactView() {
           </div>
 
           <div>
-            <label htmlFor="topic" className={fieldLabel}>
+            <Label htmlFor="topic" className={fieldLabel}>
               Topic
-            </label>
+            </Label>
             <div className="relative">
-              <select id="topic" name="topic" defaultValue={topics[0]} className={`${fieldClass} h-11 appearance-none pr-9`}>
+              <NativeSelect
+                id="topic"
+                name="topic"
+                defaultValue={topics[0]}
+                className="w-full"
+                selectClassName={`${fieldClass} h-11 appearance-none pr-9`}
+                showIcon={false}
+              >
                 {topics.map((topic) => (
-                  <option key={topic}>{topic}</option>
+                  <NativeSelectOption key={topic}>{topic}</NativeSelectOption>
                 ))}
-              </select>
+              </NativeSelect>
               <span
                 aria-hidden
                 className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -141,10 +153,10 @@ export function ContactView() {
           </div>
 
           <div>
-            <label htmlFor="message" className={fieldLabel}>
+            <Label htmlFor="message" className={fieldLabel}>
               Message
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               id="message"
               name="message"
               required
@@ -154,13 +166,13 @@ export function ContactView() {
             />
           </div>
 
-          <button
+          <Button
             type="submit"
             disabled={sent}
             className="h-12 rounded-xl bg-primary text-[14px] font-semibold text-primary-foreground transition-all hover:brightness-95 active:scale-[0.99] disabled:opacity-80"
           >
             {sent ? "Message sent" : "Send message"}
-          </button>
+          </Button>
 
           {sent ? (
             <p className="flex items-center justify-center gap-2 text-[13px] text-foreground/80">

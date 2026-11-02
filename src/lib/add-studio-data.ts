@@ -85,21 +85,20 @@ export const cancellationPolicies = [
 /* ------------------------------------------------------------------ */
 
 export const initialForm = {
-  name: "Daylight Soft Corner",
-  category: "Content studio",
-  shortDescription: "This a facebook content type studio.",
-  fullDescription:
-    "This is a studio, which is use for content creator or influencer who are create content for facebook, instagram, tiktok, youtube etc.",
-  country: "Bangladesh",
-  city: "dhaka",
-  streetAddress: "Dhaka, Bangladesh",
+  name: "",
+  category: "",
+  shortDescription: "",
+  fullDescription: "",
+  country: "",
+  city: "",
+  streetAddress: "",
   latitude: "",
   longitude: "",
-  hourlyRate: "50",
-  securityDeposit: "10",
-  maxCapacity: "12",
-  rules: "No smoking. Load-in through the rear entrance. Leave the space as you found it.",
-  cancellationPolicy: cancellationPolicies[0] as string,
+  hourlyRate: "",
+  securityDeposit: "",
+  maxCapacity: "",
+  rules: "",
+  cancellationPolicy: "",
 };
 
 export type AddStudioForm = typeof initialForm;

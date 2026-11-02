@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { studios } from "@/lib/studios-data";
+import { getStudio } from "@/lib/api";
 import { StudioDetailsView } from "@/components/studio-details/studio-details-view";
 
 export const metadata: Metadata = {
@@ -14,7 +14,11 @@ export default async function StudioDetailsPage({
   searchParams: Promise<{ id?: string }>;
 }) {
   const { id } = await searchParams;
-  const studio = studios.find((s) => s.id === id) ?? studios[0];
+  const studio = await getStudio(id ?? "");
+
+  if (!studio) {
+    return <StudioDetailsView studio={null} />;
+  }
 
   return <StudioDetailsView studio={studio} />;
 }

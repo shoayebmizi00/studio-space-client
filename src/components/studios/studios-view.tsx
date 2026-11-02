@@ -1,13 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, LayoutGrid, AlignJustify } from "lucide-react";
-import { studios, type Studio } from "@/lib/studios-data";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { FiltersPanel, defaultFilters } from "./filters-panel";
 import { StudioCard } from "./studio-card";
 import { StudioListCard } from "./studio-list-card";
 import { SortSelect, type SortOption } from "./sort-select";
+import { getStudios } from "@/lib/api";
 import type { FilterState } from "./filters-panel";
+import type { StudioListing } from "@/lib/api";
+
+type CatalogStudio = StudioListing & {
+  id: string;
+  location: string;
+  price: number;
+  capacity: number;
+};
 
 export function StudiosView() {
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
@@ -15,10 +25,32 @@ export function StudiosView() {
   const [sort, setSort] = useState<SortOption>("Recommended");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [studios, setStudios] = useState<StudioListing[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadStudios() {
+      try {
+        const data = await getStudios();
+        setStudios(data);
+      } catch (err) {
+        console.error("Failed to load studios from server api:", err);
+        setError("Could not load studios from the backend server. Make sure studio-space-server is running on port 5000.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadStudios();
+  }, []);
 
   const filtered = useMemo(
-    () => sortStudios(filterStudios(studios, filters, query), sort),
-    [filters, query, sort]
+    () => sortStudios(filterStudios(studios.map(mapStudioListing), filters, query), sort),
+    [studios, filters, query, sort]
+  );
+  const maxPriceLimit = Math.max(
+    600,
+    ...studios.map((studio) => studio.hourlyRate || studio.price || 0)
   );
 
   const toggleFavorite = (id: string) => {
@@ -52,7 +84,7 @@ export function StudiosView() {
         <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
           <div className="relative w-full max-w-sm">
             <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
+            <Input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -63,7 +95,7 @@ export function StudiosView() {
 
           <div className="flex items-center gap-2">
             <SortSelect value={sort} onChange={setSort} />
-            <button
+            <Button
               type="button"
               aria-label="Grid view"
               onClick={() => setView("grid")}
@@ -74,8 +106,8 @@ export function StudiosView() {
               }
             >
               <LayoutGrid className="size-4" />
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               aria-label="List view"
               onClick={() => setView("list")}
@@ -86,14 +118,18 @@ export function StudiosView() {
               }
             >
               <AlignJustify className="size-4" />
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Results */}
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
           <div className="lg:sticky lg:top-6 lg:self-start">
-            <FiltersPanel filters={filters} onChange={setFilters} />
+            <FiltersPanel
+              filters={filters}
+              onChange={setFilters}
+              maxPriceLimit={maxPriceLimit}
+            />
           </div>
 
           <div>
@@ -101,7 +137,18 @@ export function StudiosView() {
               {filtered.length} studios
             </p>
 
-            {filtered.length === 0 ? (
+            {isLoading ? (
+              <div className="min-h-100 flex items-center justify-center text-muted-foreground text-sm">
+                Loading studios from backend server...
+              </div>
+            ) : error ? (
+              <div className="grid min-h-56 place-content-center gap-2 rounded-2xl border border-dashed border-red-300 bg-red-50/50 p-6 text-center text-red-900">
+                <p className="text-sm font-medium">{error}</p>
+                <p className="text-xs text-red-700/80">
+                  Run <code className="rounded bg-red-100 px-1 py-0.5">node index.js</code> or <code className="rounded bg-red-100 px-1 py-0.5">npm start</code> inside <code className="rounded bg-red-100 px-1 py-0.5">studio-space-server</code>.
+                </p>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="grid min-h-56 place-content-center gap-1 rounded-2xl border border-dashed border-border text-center">
                 <p className="text-sm font-medium">No studios match your filters</p>
                 <p className="text-xs text-muted-foreground">
@@ -133,45 +180,63 @@ export function StudiosView() {
   );
 }
 
-function filterStudios(all: Studio[], f: FilterState, search: string): Studio[] {
+function mapStudioListing(studio: StudioListing): CatalogStudio {
+  // Map backend StudioListing to the shape expected by the UI components
+  return {
+    ...studio,
+    id: studio._id || studio.id || "",
+    price: studio.hourlyRate || studio.price || 0,
+    capacity: studio.maxCapacity || studio.capacity || 0,
+    location: `${studio.city}, ${studio.country}`,
+    rating: studio.rating || 0,
+    reviews: studio.reviews || 0,
+  };
+}
+
+function filterStudios(all: CatalogStudio[], f: FilterState, search: string): CatalogStudio[] {
   const query = search.trim().toLowerCase();
   const location = f.location.trim().toLowerCase();
   const category = f.category.toLowerCase();
 
   return all.filter((studio) => {
-    const searchable = `${studio.name} ${studio.location} ${studio.category}`.toLowerCase();
+    const mapped = mapStudioListing(studio);
+    const searchable = `${mapped.name} ${mapped.location} ${mapped.category}`.toLowerCase();
     const matchesQuery = query.length === 0 || searchable.includes(query);
 
     const matchesLocation =
-      location.length === 0 || studio.location.toLowerCase().includes(location);
+      location.length === 0 || mapped.location.toLowerCase().includes(location);
 
     const matchesCategory =
       f.category === "All categories" ||
-      studio.category.toLowerCase() === category;
+      mapped.category.toLowerCase() === category;
 
     return (
       matchesQuery &&
       matchesLocation &&
       matchesCategory &&
-      studio.price <= f.maxPrice &&
-      studio.rating >= f.rating &&
-      (f.capacity === 0 || studio.capacity >= f.capacity) &&
-      f.amenities.every((amenity) => studio.amenities.includes(amenity))
+      (f.maxPrice === null || mapped.price <= f.maxPrice) &&
+      (mapped.rating || 0) >= f.rating &&
+      (f.capacity === 0 || mapped.capacity >= f.capacity) &&
+      f.amenities.every((amenity) => mapped.amenities.includes(amenity))
     );
   });
 }
 
-function sortStudios(list: Studio[], sort: SortOption): Studio[] {
+function sortStudios(list: CatalogStudio[], sort: SortOption): CatalogStudio[] {
   const sorted = [...list];
   switch (sort) {
     case "Newest":
-      return sorted.sort((a, b) => b.addedAt - a.addedAt);
+      return sorted.sort((a, b) => {
+        const aDate = new Date(a.createdAt).getTime();
+        const bDate = new Date(b.createdAt).getTime();
+        return bDate - aDate;
+      });
     case "Price: low to high":
       return sorted.sort((a, b) => a.price - b.price);
     case "Price: high to low":
       return sorted.sort((a, b) => b.price - a.price);
     case "Top rated":
-      return sorted.sort((a, b) => b.rating - a.rating || b.reviews - a.reviews);
+      return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.reviews || 0) - (a.reviews || 0));
     default:
       return sorted;
   }

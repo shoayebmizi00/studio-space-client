@@ -1,16 +1,52 @@
 import { MapPin, RotateCcw } from "lucide-react";
-import {
-  amenityOptions,
-  capacityOptions,
-  categoryOptions,
-  ratingOptions,
-} from "@/lib/studios-data";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import { cn } from "cn";
+
+const categoryOptions = [
+  "All categories",
+  "Photography",
+  "Film stage",
+  "Podcast",
+  "Music suite",
+  "Art workshop",
+  "Content studio",
+  "Rehearsal",
+  "Event space",
+] as const;
+
+const ratingOptions = [
+  { label: "Any", value: 0 },
+  { label: "4.0+", value: 4 },
+  { label: "4.5+", value: 4.5 },
+] as const;
+
+const capacityOptions = [
+  { label: "Any size", value: 0 },
+  { label: "3+ people", value: 3 },
+  { label: "6+ people", value: 6 },
+  { label: "12+ people", value: 12 },
+  { label: "25+ people", value: 25 },
+] as const;
+
+const amenityOptions = [
+  "Lighting",
+  "Soundproofing",
+  "Wi-Fi",
+  "Air Conditioning",
+  "Parking",
+  "Green Screen",
+  "Makeup Room",
+  "Kitchen",
+  "Changing Room",
+  "Equipment Rental",
+] as const;
 
 export type FilterState = {
   location: string;
   category: string;
-  maxPrice: number;
+  maxPrice: number | null;
   rating: number;
   capacity: number;
   amenities: string[];
@@ -19,7 +55,7 @@ export type FilterState = {
 export const defaultFilters: FilterState = {
   location: "",
   category: "All categories",
-  maxPrice: 600,
+  maxPrice: null,
   rating: 0,
   capacity: 0,
   amenities: [],
@@ -31,9 +67,11 @@ const labelClass =
 export function FiltersPanel({
   filters,
   onChange,
+  maxPriceLimit,
 }: {
   filters: FilterState;
   onChange: (next: FilterState) => void;
+  maxPriceLimit: number;
 }) {
   const { setAmenity, clearAll } = helpers(onChange, filters);
 
@@ -42,14 +80,14 @@ export function FiltersPanel({
       {/* Head */}
       <div className="flex items-center justify-between">
         <h2 className="text-[15px] font-semibold tracking-tight">Filters</h2>
-        <button
+        <Button
           type="button"
           onClick={clearAll}
           className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           <RotateCcw className="size-3" />
           Clear all
-        </button>
+        </Button>
       </div>
 
       {/* Location */}
@@ -57,7 +95,7 @@ export function FiltersPanel({
         <p className={labelClass}>Location</p>
         <div className="relative">
           <MapPin className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
+          <Input
             type="text"
             value={filters.location}
             onChange={(e) => onChange({ ...filters, location: e.target.value })}
@@ -74,7 +112,7 @@ export function FiltersPanel({
           {categoryOptions.map((option) => {
             const active = filters.category === option;
             return (
-              <button
+              <Button
                 key={option}
                 type="button"
                 onClick={() => onChange({ ...filters, category: option })}
@@ -86,7 +124,7 @@ export function FiltersPanel({
                 )}
               >
                 {option}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -98,17 +136,21 @@ export function FiltersPanel({
           <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             Max hourly price
           </p>
-          <p className="text-xs font-semibold">${filters.maxPrice}</p>
+          <p className="text-xs font-semibold">${filters.maxPrice ?? maxPriceLimit}</p>
         </div>
-        <input
-          type="range"
+        <Slider
           min={0}
-          max={600}
+          max={maxPriceLimit}
           step={10}
-          value={filters.maxPrice}
-          onChange={(e) => onChange({ ...filters, maxPrice: Number(e.target.value) })}
+          value={[filters.maxPrice ?? maxPriceLimit]}
+          onValueChange={(value) =>
+            onChange({
+              ...filters,
+              maxPrice: typeof value === "number" ? value : value[0] ?? maxPriceLimit,
+            })
+          }
           aria-label="Max hourly price"
-          className="h-1 w-full cursor-pointer accent-[#cff54a]"
+          className="w-full cursor-pointer"
         />
       </div>
 
@@ -119,7 +161,7 @@ export function FiltersPanel({
           {ratingOptions.map((option) => {
             const active = filters.rating === option.value;
             return (
-              <button
+              <Button
                 key={option.label}
                 type="button"
                 onClick={() => onChange({ ...filters, rating: option.value })}
@@ -131,7 +173,7 @@ export function FiltersPanel({
                 )}
               >
                 {option.label}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -144,7 +186,7 @@ export function FiltersPanel({
           {capacityOptions.map((option) => {
             const active = filters.capacity === option.value;
             return (
-              <button
+              <Button
                 key={option.label}
                 type="button"
                 onClick={() => onChange({ ...filters, capacity: option.value })}
@@ -156,7 +198,7 @@ export function FiltersPanel({
                 )}
               >
                 {option.label}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -169,7 +211,7 @@ export function FiltersPanel({
           {amenityOptions.map((amenity) => {
             const checked = filters.amenities.includes(amenity);
             return (
-              <button
+              <Button
                 key={amenity}
                 type="button"
                 onClick={() => setAmenity(amenity)}
@@ -186,7 +228,7 @@ export function FiltersPanel({
                   {checked ? <span className="size-1.5 rounded-full bg-foreground" /> : null}
                 </span>
                 {amenity}
-              </button>
+              </Button>
             );
           })}
         </div>

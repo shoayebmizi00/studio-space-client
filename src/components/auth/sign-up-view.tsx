@@ -5,7 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Lock, Mail, UserPlus } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AuthShell } from "./auth-shell";
+
+function getCallbackUrl(): string {
+  const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl");
+  return callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//")
+    ? callbackUrl
+    : "/studios";
+}
 
 /* ------------------------------------------------------------------ */
 /* View                                                                */
@@ -27,25 +37,30 @@ export function SignUpView() {
     }
     setLoading(true);
     setError(null);
+    try {
+      const { error: authError } = await authClient.signUp.email({
+        name: email.split("@")[0],
+        email,
+        password,
+        callbackURL: getCallbackUrl(),
+      });
 
-    const { error: authError } = await authClient.signUp.email({
-      // The reference form collects no name — derive one from the email.
-      name: email.split("@")[0],
-      email,
-      password,
-      callbackURL: "/studios",
-    });
+      if (authError) {
+        setError(authError.message || "Could not create the account. Try another email.");
+        return;
+      }
 
-    if (authError) {
+      router.replace(getCallbackUrl());
+      router.refresh();
+    } catch (authError) {
       setError(
-        authError.message || "Could not create the account. Is the auth server running?"
+        authError instanceof Error
+          ? authError.message
+          : "Could not create the account. Check your connection and try again."
       );
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // better-auth signs the new user in automatically when verification is off.
-    router.push("/studios");
   };
 
   const iconField =
@@ -64,7 +79,7 @@ export function SignUpView() {
       </p>
 
       <div className="mt-7 rounded-3xl border border-border/60 bg-card p-6 sm:p-7">
-        <button
+        <Button
           type="button"
           disabled={loading}
           onClick={async () => {
@@ -73,10 +88,15 @@ export function SignUpView() {
             try {
               await authClient.signIn.social({
                 provider: "google",
-                callbackURL: "/studios",
+                callbackURL: getCallbackUrl(),
               });
-            } catch {
-              setError("Google sign-up is not available. Check the server setup.");
+            } catch (authError) {
+              setError(
+                authError instanceof Error
+                  ? authError.message
+                  : "Google sign-up is not available. Check the server setup."
+              );
+            } finally {
               setLoading(false);
             }
           }}
@@ -101,7 +121,7 @@ export function SignUpView() {
             />
           </svg>
           Continue with Google
-        </button>
+        </Button>
 
         <div className="my-5 flex items-center gap-4">
           <span className="h-px flex-1 bg-border" />
@@ -113,11 +133,11 @@ export function SignUpView() {
 
         <form onSubmit={createAccount} className="flex flex-col gap-4">
           <div>
-            <label htmlFor="email" className="mb-2 block text-[13px] font-semibold tracking-tight">
+            <Label htmlFor="email" className="mb-2 block text-[13px] font-semibold tracking-tight">
               Email
-            </label>
+            </Label>
             <div className="relative">
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
@@ -133,11 +153,11 @@ export function SignUpView() {
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-2 block text-[13px] font-semibold tracking-tight">
+            <Label htmlFor="password" className="mb-2 block text-[13px] font-semibold tracking-tight">
               Password
-            </label>
+            </Label>
             <div className="relative">
-              <input
+              <Input
                 id="password"
                 name="password"
                 type="password"
@@ -155,12 +175,12 @@ export function SignUpView() {
 
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label htmlFor="confirm" className="text-[13px] font-semibold tracking-tight">
+              <Label htmlFor="confirm" className="text-[13px] font-semibold tracking-tight">
                 Confirm Password
-              </label>
+              </Label>
             </div>
             <div className="relative">
-              <input
+              <Input
                 id="confirm"
                 name="confirm"
                 type="password"
@@ -179,13 +199,13 @@ export function SignUpView() {
             <p className="text-xs leading-relaxed text-red-600">{error}</p>
           ) : null}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
             className="mt-1 h-11 w-full rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-60"
           >
             {loading ? "Creating account…" : "Create account"}
-          </button>
+          </Button>
         </form>
       </div>
 

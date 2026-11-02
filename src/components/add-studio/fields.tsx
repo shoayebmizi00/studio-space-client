@@ -2,6 +2,11 @@
 
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "cn";
 
 /* Shared wizard field primitives ------------------------------------ */
@@ -22,9 +27,9 @@ export function FieldShell({
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-2 block text-[13px] font-semibold tracking-tight">
+      <Label htmlFor={htmlFor} className="mb-2 block text-[13px] font-semibold tracking-tight">
         {label}
-      </label>
+      </Label>
       {children}
       {hint ? <p className="mt-2 text-xs text-muted-foreground">{hint}</p> : null}
     </div>
@@ -50,7 +55,7 @@ export function TextField({
 }) {
   return (
     <FieldShell label={label} hint={hint} htmlFor={id}>
-      <input
+      <Input
         id={id}
         name={id}
         type={type}
@@ -82,19 +87,21 @@ export function SelectField({
   return (
     <FieldShell label={label} hint={hint} htmlFor={id}>
       <div className="relative">
-        <select
+        <NativeSelect
           id={id}
           name={id}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className={`${fieldClass} h-11 appearance-none bg-background pr-9`}
+          className="w-full"
+          selectClassName={`${fieldClass} h-11 appearance-none bg-background pr-9`}
+          showIcon={false}
         >
           {options.map((option) => (
-            <option key={option} value={option}>
+            <NativeSelectOption key={option} value={option}>
               {option}
-            </option>
+            </NativeSelectOption>
           ))}
-        </select>
+        </NativeSelect>
         <span
           aria-hidden
           className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -133,7 +140,7 @@ export function AreaField({
 }) {
   return (
     <FieldShell label={label} hint={hint} htmlFor={id}>
-      <textarea
+      <Textarea
         id={id}
         name={id}
         rows={rows}
@@ -159,7 +166,9 @@ export function AmenityRow({
   onClick: () => void;
 }) {
   return (
-    <button
+      <Button
+      variant="plain"
+      size="plain"
       type="button"
       aria-pressed={active}
       onClick={onClick}
@@ -170,7 +179,7 @@ export function AmenityRow({
     >
       <Icon className="size-4 shrink-0 text-foreground/70" />
       {label}
-    </button>
+    </Button>
   );
 }
 
@@ -184,7 +193,9 @@ export function EquipmentChip({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
+      variant="plain"
+      size="plain"
       type="button"
       aria-pressed={active}
       onClick={onClick}
@@ -196,7 +207,7 @@ export function EquipmentChip({
       )}
     >
       {label}
-    </button>
+    </Button>
   );
 }
 
