@@ -8,7 +8,6 @@ import { FiltersPanel, defaultFilters } from "./filters-panel";
 import { StudioCard } from "./studio-card";
 import { StudioListCard } from "./studio-list-card";
 import { SortSelect, type SortOption } from "./sort-select";
-import { getStudios } from "@/lib/api";
 import type { FilterState } from "./filters-panel";
 import type { StudioListing } from "@/lib/api";
 
@@ -35,11 +34,23 @@ export function StudiosView({ initialCategory }: { initialCategory?: string }) {
   useEffect(() => {
     async function loadStudios() {
       try {
-        const data = await getStudios();
+        // Use the Next.js API route as a proxy so the browser never needs to
+        // reach the Express server directly (avoids cross-origin issues when
+        // the client fetches from a "use client" component).
+        const res = await fetch("/api/studios", { cache: "no-store" });
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          throw new Error(data?.error || `Server responded with ${res.status}`);
+        }
+        const data: StudioListing[] = await res.json();
         setStudios(data);
       } catch (err) {
-        console.error("Failed to load studios from server api:", err);
-        setError("Could not load studios from the backend server. Make sure studio-space-server is running on port 5000.");
+        console.error("Failed to load studios:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Could not load studios from the backend server. Make sure studio-space-server is running on port 5000."
+        );
       } finally {
         setIsLoading(false);
       }
