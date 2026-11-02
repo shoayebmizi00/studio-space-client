@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 const fieldLabel = "mb-2 block text-[13px] font-semibold tracking-tight";
 const fieldClass =
@@ -124,8 +125,11 @@ export function ProfileView() {
       setProfile((current) => ({ ...current, ...data.profile }));
       await refreshSession();
       setSaved(true);
+      toast.success("Profile updated");
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "Could not save your profile.");
+      const message = saveError instanceof Error ? saveError.message : "Could not save your profile.";
+      setError(message);
+      toast.error("Profile could not be saved", { description: message });
     } finally {
       setSaving(false);
     }

@@ -4,18 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "cn";
 
-const categoryOptions = [
-  "All categories",
-  "Photography",
-  "Film stage",
-  "Podcast",
-  "Music suite",
-  "Art workshop",
-  "Content studio",
-  "Rehearsal",
-  "Event space",
-] as const;
-
 const ratingOptions = [
   { label: "Any", value: 0 },
   { label: "4.0+", value: 4 },
@@ -68,10 +56,12 @@ export function FiltersPanel({
   filters,
   onChange,
   maxPriceLimit,
+  categoryOptions,
 }: {
   filters: FilterState;
   onChange: (next: FilterState) => void;
   maxPriceLimit: number;
+  categoryOptions: string[];
 }) {
   const { setAmenity, clearAll } = helpers(onChange, filters);
 

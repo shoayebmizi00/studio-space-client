@@ -7,6 +7,11 @@ export const metadata: Metadata = {
     "Browse verified creative studios with real availability, transparent hourly pricing and honest reviews from completed bookings.",
 };
 
-export default async function StudiosPage() {
-  return <StudiosView />;
+export default async function StudiosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>;
+}) {
+  const { category } = await searchParams;
+  return <StudiosView initialCategory={category} />;
 }

@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "cn";
 import type { StudioListing } from "@/lib/api";
 import { createBooking } from "@/lib/bookings";
+import { toast } from "sonner";
 
 const statCardClass = "rounded-xl border border-border/60 bg-card p-4";
 
@@ -66,8 +67,13 @@ function BookingWidget({ studio, deposit }: { studio: StudioListing; deposit: nu
         projectDetails: details,
       });
       setRequestSent(true);
+      toast.success("Booking request sent", {
+        description: "You can track the host's response in My bookings.",
+      });
     } catch (error) {
-      setRequestError(error instanceof Error ? error.message : "Could not request this booking.");
+      const message = error instanceof Error ? error.message : "Could not request this booking.";
+      setRequestError(message);
+      toast.error("Booking request failed", { description: message });
     } finally {
       setSubmitting(false);
     }

@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Logo } from "./logo";
 
 const socials = [
@@ -66,80 +63,19 @@ const landingTags = [
 
 const landingLegal = ["Privacy Policy", "Terms of Service", "Cookie Policy"];
 
-const appColumns = [
-  {
-    heading: "Discover",
-    links: [
-      { label: "Explore studios", href: "/studios" },
-      { label: "How it works", href: "/how-it-works" },
-      { label: "About us", href: "/about" },
-      { label: "FAQ", href: "/contact" },
-    ],
-  },
-  {
-    heading: "Hosting",
-    links: [
-      { label: "List your studio", href: "/add-studio" },
-      { label: "My listings", href: "/dashboard" },
-      { label: "Host dashboard", href: "/dashboard" },
-      { label: "Availability", href: "/dashboard" },
-    ],
-  },
-  {
-    heading: "Account",
-    links: [
-      { label: "Dashboard", href: "/dashboard" },
-      { label: "My bookings", href: "/my-bookings" },
-      { label: "Saved studios", href: "/saved-studios" },
-      { label: "Contact", href: "/contact" },
-    ],
-  },
-];
-
-const appTags = [
-  "Photography Studio",
-  "Film & Cinema Stage",
-  "Podcast Recording Room",
-  "Music Recording Suite",
-  "Art Workshop",
-  "Content Creation Studio",
-  "Rehearsal Space",
-  "Event & Production Space",
-];
-
 /* ------------------------------------------------------------------ */
 /* Footer                                                              */
 /* ------------------------------------------------------------------ */
 
-/**
- * Shared site footer, rendered once in `src/app/layout.tsx`.
- * The landing page keeps its pill-tag style with the legal bar;
- * studio pages keep the plain keyword row with the booking note.
- */
 export function Footer() {
-  const pathname = usePathname();
-  const isLanding = pathname === "/";
-
-  // Full-screen auth pages render their own footer text — no shared chrome.
-  if (pathname === "/sign-in" || pathname === "/sign-up") return null;
-
-  const columns = isLanding ? landingColumns : appColumns;
-  const tags = isLanding ? landingTags : appTags;
-
   return (
-    <footer className={isLanding ? "bg-background" : "bg-surface-alt"}>
+    <footer className="bg-background">
       <div className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6">
-        <div
-          className={
-            isLanding
-              ? "grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]"
-              : "grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))] md:pl-[20%]"
-          }
-        >
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
           {/* Brand */}
           <div className="flex flex-col items-start gap-5">
             <Logo />
-            <p className="max-w-[15rem] text-xs leading-relaxed text-muted-foreground">
+            <p className="max-w-60 text-xs leading-relaxed text-muted-foreground">
               The marketplace for creative space. Create. Collaborate. Produce.
             </p>
             <div className="flex items-center gap-2">
@@ -159,7 +95,7 @@ export function Footer() {
           </div>
 
           {/* Link columns */}
-          {columns.map((column) => (
+          {landingColumns.map((column) => (
             <nav key={column.heading} className="flex flex-col gap-4">
               <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
                 {column.heading}
@@ -181,55 +117,34 @@ export function Footer() {
         </div>
 
         {/* Keywords */}
-        {isLanding ? (
-          <div className="mt-12 flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-border/70 px-3 py-1.5 text-[11px] text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <div className="mt-12 flex flex-wrap gap-x-6 gap-y-2">
-            {tags.map((tag) => (
-              <span key={tag} className="text-xs text-muted-foreground">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="mt-12 flex flex-wrap gap-2">
+          {landingTags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full border border-border/70 px-3 py-1.5 text-[11px] text-muted-foreground"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
 
         {/* Bottom bar */}
-        {isLanding ? (
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-border/70 pt-6">
-            <p className="text-xs text-muted-foreground">
-              © 2025 StudioSpace. All rights reserved.
-            </p>
-            <div className="flex flex-wrap items-center gap-5">
-              {landingLegal.map((item) => (
-                <Link
-                  key={item}
-                  href="/contact"
-                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {item}
-                </Link>
-              ))}
-            </div>
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-border/70 pt-6">
+          <p className="text-xs text-muted-foreground">
+            © 2026 StudioSpace. All rights reserved.
+          </p>
+          <div className="flex flex-wrap items-center gap-5">
+            {landingLegal.map((item) => (
+              <Link
+                key={item}
+                href="/contact"
+                className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {item}
+              </Link>
+            ))}
           </div>
-        ) : (
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-            <p className="text-xs text-muted-foreground">
-              © 2026 StudioSpace. All rights reserved.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Bookings are requests until a host confirms availability.
-            </p>
-          </div>
-        )}
+        </div>
       </div>
     </footer>
   );

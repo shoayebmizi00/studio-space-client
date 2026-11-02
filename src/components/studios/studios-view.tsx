@@ -19,8 +19,11 @@ type CatalogStudio = StudioListing & {
   capacity: number;
 };
 
-export function StudiosView() {
-  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+export function StudiosView({ initialCategory }: { initialCategory?: string }) {
+  const [filters, setFilters] = useState<FilterState>(() => ({
+    ...defaultFilters,
+    category: initialCategory || defaultFilters.category,
+  }));
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("Recommended");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -47,6 +50,14 @@ export function StudiosView() {
   const filtered = useMemo(
     () => sortStudios(filterStudios(studios.map(mapStudioListing), filters, query), sort),
     [studios, filters, query, sort]
+  );
+  const categoryOptions = useMemo(
+    () => [
+      "All categories",
+      ...Array.from(new Set(studios.map((studio) => studio.category.trim()).filter(Boolean)))
+        .sort((left, right) => left.localeCompare(right)),
+    ],
+    [studios]
   );
   const maxPriceLimit = Math.max(
     600,
@@ -129,6 +140,7 @@ export function StudiosView() {
               filters={filters}
               onChange={setFilters}
               maxPriceLimit={maxPriceLimit}
+              categoryOptions={categoryOptions}
             />
           </div>
 

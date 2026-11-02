@@ -1,14 +1,6 @@
 import type { StaticImageData } from "next/image";
 import type { LucideIcon } from "lucide-react";
 import {
-  Camera,
-  Clapperboard,
-  Mic,
-  Music,
-  Palette,
-  Video,
-  Drum,
-  CalendarDays,
   Search,
   CalendarCheck2,
   Sparkles,
@@ -47,26 +39,6 @@ export const images: Record<
   northbound: img7,
   signal: img6,
 };
-
-/* ------------------------------------------------------------------ */
-/* Categories                                                          */
-/* ------------------------------------------------------------------ */
-
-export type Category = {
-  icon: LucideIcon;
-  name: string;
-};
-
-export const categories: Category[] = [
-  { icon: Camera, name: "Photography" },
-  { icon: Clapperboard, name: "Film stage" },
-  { icon: Mic, name: "Podcast" },
-  { icon: Music, name: "Music studio" },
-  { icon: Palette, name: "Art workshop" },
-  { icon: Video, name: "Content studio" },
-  { icon: Drum, name: "Rehearsal" },
-  { icon: CalendarDays, name: "Event space" },
-];
 
 /* ------------------------------------------------------------------ */
 /* How it works                                                        */

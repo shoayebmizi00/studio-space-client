@@ -28,6 +28,7 @@ import {
   type Booking,
   type BookingStatus,
 } from "@/lib/bookings";
+import { toast } from "sonner";
 
 const statusTabs = ["All", "Pending", "Confirmed", "Completed", "Cancelled"] as const;
 type StatusTab = (typeof statusTabs)[number];
@@ -139,8 +140,11 @@ export function MyBookingsView() {
       const updated = await cancelBooking(booking.id);
       setBookings((current) => current.map((item) => item.id === updated.id ? updated : item));
       if (selected?.id === updated.id) setSelected(updated);
+      toast.success("Booking cancelled");
     } catch (cancelError) {
-      setActionError(cancelError instanceof Error ? cancelError.message : "Could not cancel this booking.");
+      const message = cancelError instanceof Error ? cancelError.message : "Could not cancel this booking.";
+      setActionError(message);
+      toast.error("Could not cancel booking", { description: message });
     } finally {
       setSaving(false);
     }
@@ -155,8 +159,11 @@ export function MyBookingsView() {
       setBookings((current) => current.map((item) => item.id === updated.id ? updated : item));
       setSelected(updated);
       setDialogMode("details");
+      toast.success("Booking request updated");
     } catch (saveError) {
-      setActionError(saveError instanceof Error ? saveError.message : "Could not update this booking.");
+      const message = saveError instanceof Error ? saveError.message : "Could not update this booking.";
+      setActionError(message);
+      toast.error("Could not update booking", { description: message });
     } finally {
       setSaving(false);
     }
@@ -170,8 +177,11 @@ export function MyBookingsView() {
       await deleteBooking(selected.id);
       setBookings((current) => current.filter((item) => item.id !== selected.id));
       closeDialog();
+      toast.success("Booking deleted");
     } catch (deleteError) {
-      setActionError(deleteError instanceof Error ? deleteError.message : "Could not delete this booking.");
+      const message = deleteError instanceof Error ? deleteError.message : "Could not delete this booking.";
+      setActionError(message);
+      toast.error("Could not delete booking", { description: message });
     } finally {
       setSaving(false);
     }
