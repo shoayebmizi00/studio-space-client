@@ -196,33 +196,38 @@ export function FiltersPanel({
 
       {/* Amenities */}
       <div>
-        <p className={labelClass}>Amenities</p>
-        <div className="flex flex-col gap-2.5">
-          {amenityOptions.map((amenity) => {
-            const checked = filters.amenities.includes(amenity);
-            return (
-              <Button
-                key={amenity}
-                type="button"
-                onClick={() => setAmenity(amenity)}
-                className="flex items-center gap-2.5 text-left text-[13px] text-foreground/80"
-              >
-                <span
-                  className={cn(
-                    "grid size-4 shrink-0 place-items-center rounded-full border transition-colors",
-                    checked
-                      ? "border-[#86a337] bg-primary"
-                      : "border-[#cff54a]/70 hover:border-[#86a337]"
-                  )}
-                >
-                  {checked ? <span className="size-1.5 rounded-full bg-foreground" /> : null}
-                </span>
-                {amenity}
-              </Button>
-            );
-          })}
-        </div>
-      </div>
+  <p className={labelClass}>Amenities</p>
+
+  <div className="flex flex-col items-start gap-2.5">
+    {amenityOptions.map((amenity) => {
+      const checked = filters.amenities.includes(amenity);
+
+      return (
+        <Button
+          key={amenity}
+          type="button"
+          onClick={() => setAmenity(amenity)}
+          className="flex w-full items-center justify-start gap-2.5 text-left text-[13px] text-foreground/80"
+        >
+          <span
+            className={cn(
+              "grid size-4 shrink-0 place-items-center rounded-full border transition-colors",
+              checked
+                ? "border-[#86a337] bg-primary"
+                : "border-[#cff54a]/70 hover:border-[#86a337]"
+            )}
+          >
+            {checked ? (
+              <span className="size-1.5 rounded-full bg-foreground" />
+            ) : null}
+          </span>
+
+          {amenity}
+        </Button>
+      );
+    })}
+  </div>
+</div>
     </aside>
   );
 }
