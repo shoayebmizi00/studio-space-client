@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { jwt } from "better-auth/plugins";
 import { MongoClient } from "mongodb";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 
@@ -14,14 +15,6 @@ const client = new MongoClient(mongoUri);
 export const db = client.db("studio-space-a8");
 
 const socialProviders = {
-  ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
-    ? {
-        github: {
-          clientId: process.env.GITHUB_CLIENT_ID,
-          clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        },
-      }
-    : {}),
   ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
     ? {
         google: {
@@ -40,6 +33,16 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    // The assignment requires passwords of at least 6 characters.
+    minPasswordLength: 6,
   },
   socialProviders,
+  plugins: [jwt()],
+  session: {
+    cookieCache: {
+      enabled: true,
+      strategy: "jwt",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    }
+  }
 });
