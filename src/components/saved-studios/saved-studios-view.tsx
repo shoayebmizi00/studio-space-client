@@ -250,7 +250,7 @@ export function SavedStudiosView() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("http://localhost:5000/studios", { cache: "no-store" });
+        const res = await fetch(`${process.env.API_URL}/studios`, { cache: "no-store" });
         if (!res.ok) {
           const body = await res.json().catch(() => null);
           throw new Error(body?.error || `Server returned ${res.status}`);

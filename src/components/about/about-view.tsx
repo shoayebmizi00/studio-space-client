@@ -42,7 +42,7 @@ const beliefCards: Card[] = [
 ];
 
 const teamMembers = [
-  { initials: "ID", name: "Ines Duarte", role: "Founder & product" },
+  { initials: "ID", name: "Md Shoayeb Mizi", role: "Founder & product" },
   { initials: "KM", name: "Kai Morgan", role: "Design" },
   { initials: "RH", name: "Rami Haddad", role: "Engineering" },
   { initials: "SL", name: "Sofia Lindqvist", role: "Host community" },

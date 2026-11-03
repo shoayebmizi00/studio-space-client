@@ -20,7 +20,7 @@ export default async function StudioDetailsPage({
 
   if (id) {
     try {
-      const res = await fetch(`http://localhost:5000/studios/${id}`, {
+      const res = await fetch(`${process.env.API_URL}/studios/${id}`, {
         cache: "no-store",
       });
       if (res.ok) {

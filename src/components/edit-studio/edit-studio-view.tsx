@@ -73,7 +73,7 @@ export function EditStudioView() {
 
     async function load() {
       try {
-        const res = await fetch(`http://localhost:5000/studios/${params.id}`, {
+        const res = await fetch(`${process.env.API_URL}/studios/${params.id}`, {
           cache: "no-store",
         });
         if (!res.ok) {

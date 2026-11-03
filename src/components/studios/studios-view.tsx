@@ -51,7 +51,7 @@ export function StudiosView({
     async function loadStudios() {
       try {
         // Load all studios straight from the Express server.
-        const res = await fetch("http://localhost:5000/studios", { cache: "no-store" });
+        const res = await fetch(`${process.env.API_URL}/studios`, { cache: "no-store" });
         if (!res.ok) {
           const data = await res.json().catch(() => null);
           throw new Error(data?.error || `Server responded with ${res.status}`);
