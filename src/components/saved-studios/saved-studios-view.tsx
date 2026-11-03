@@ -28,6 +28,7 @@ import { Stars } from "@/components/studios/studio-card";
 import { cn } from "cn";
 import type { Studio } from "@/lib/studio-type";
 import { useSavedStudios } from "@/lib/saved-studios";
+import { API_URL } from "@/lib/api-url";
 import { toast } from "sonner";
 
 /* ------------------------------------------------------------------ */
@@ -250,7 +251,7 @@ export function SavedStudiosView() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${process.env.API_URL}/studios`, { cache: "no-store" });
+        const res = await fetch(`${API_URL}/studios`, { cache: "no-store" });
         if (!res.ok) {
           const body = await res.json().catch(() => null);
           throw new Error(body?.error || `Server returned ${res.status}`);

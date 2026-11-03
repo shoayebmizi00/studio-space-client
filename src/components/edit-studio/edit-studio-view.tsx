@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
+import { API_URL } from "@/lib/api-url";
 import { toast } from "sonner";
 import {
   categoryOptions,
@@ -73,7 +74,7 @@ export function EditStudioView() {
 
     async function load() {
       try {
-        const res = await fetch(`${process.env.API_URL}/studios/${params.id}`, {
+        const res = await fetch(`${API_URL}/studios/${params.id}`, {
           cache: "no-store",
         });
         if (!res.ok) {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { Studio } from "@/lib/studio-type";
+import { API_URL } from "@/lib/api-url";
 import { StudioDetailsView } from "@/components/studio-details/studio-details-view";
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default async function StudioDetailsPage({
 
   if (id) {
     try {
-      const res = await fetch(`${process.env.API_URL}/studios/${id}`, {
+      const res = await fetch(`${API_URL}/studios/${id}`, {
         cache: "no-store",
       });
       if (res.ok) {

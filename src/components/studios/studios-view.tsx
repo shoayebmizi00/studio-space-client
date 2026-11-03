@@ -11,6 +11,7 @@ import { SortSelect, type SortOption } from "./sort-select";
 import type { FilterState } from "./filters-panel";
 import type { Studio } from "@/lib/studio-type";
 import { useSavedStudios } from "@/lib/saved-studios";
+import { API_URL } from "@/lib/api-url";
 import { toast } from "sonner";
 
 type CatalogStudio = Studio & {
@@ -51,7 +52,7 @@ export function StudiosView({
     async function loadStudios() {
       try {
         // Load all studios straight from the Express server.
-        const res = await fetch(`${process.env.API_URL}/studios`, { cache: "no-store" });
+        const res = await fetch(`${API_URL}/studios`, { cache: "no-store" });
         if (!res.ok) {
           const data = await res.json().catch(() => null);
           throw new Error(data?.error || `Server responded with ${res.status}`);
