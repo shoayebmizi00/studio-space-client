@@ -1,6 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const protectedPaths = ["/profile", "/my-bookings", "/dashboard"];
+// Private routes: only a signed-in user may open them.
+const protectedPaths = [
+  "/profile",
+  "/my-bookings",
+  "/dashboard",
+  "/add-studio",
+  "/my-listings",
+  "/studios/edit",
+];
 
 export function proxy(request: NextRequest) {
   const isProtected = protectedPaths.some(
@@ -8,6 +16,7 @@ export function proxy(request: NextRequest) {
   );
   if (!isProtected) return NextResponse.next();
 
+  // better-auth keeps the session JWT in an HTTPOnly cookie.
   const hasSessionCookie = request.cookies
     .getAll()
     .some(({ name, value }) => name.includes("session_token") && Boolean(value));
@@ -19,5 +28,12 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/profile/:path*", "/my-bookings/:path*", "/dashboard/:path*"],
+  matcher: [
+    "/profile/:path*",
+    "/my-bookings/:path*",
+    "/dashboard/:path*",
+    "/add-studio/:path*",
+    "/my-listings/:path*",
+    "/studios/edit/:path*",
+  ],
 };
