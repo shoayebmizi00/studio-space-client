@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,6 +145,7 @@ function ImageTile({
 /* ------------------------------------------------------------------ */
 
 export function AddStudioView() {
+  const router = useRouter();
   const { data: session } = useSession();
   const user = session?.user;
   const [step, setStep] = useState(1);
@@ -171,8 +173,6 @@ export function AddStudioView() {
   const [sending, setSending] = useState(false);
   const [checkingUrl, setCheckingUrl] = useState<"cover" | "gallery" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
-  const [publishedId, setPublishedId] = useState<string | null>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -304,8 +304,8 @@ export function AddStudioView() {
     setSending(true);
     setError(null);
     try {
-      // Send the whole listing (including the images) to the Express server.
-      const res = await fetch("http://localhost:5000/add-studio", {
+      // Save the listing through our own API route (JWT cookie protects it).
+      const res = await fetch("/api/studios", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -316,8 +316,6 @@ export function AddStudioView() {
           equipment,
           coverImage,
           gallery,
-          hostName: user?.name,
-          hostEmail: user?.email,
         }),
       });
 
@@ -327,77 +325,25 @@ export function AddStudioView() {
         throw new Error(data?.error || `Server responded with ${res.status}`);
       }
 
-      const newId = data?.insertedId || data?.studio?._id || data?.studio?.id;
-      if (newId) {
-        setPublishedId(String(newId));
-      }
-      setDone(true);
       toast.success("Studio published", {
         description: `${form.name} is now live in the marketplace.`,
       });
+      router.push("/my-listings");
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
           : "Could not publish studio. Please try again."
       );
+      toast.error("Could not publish studio", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
     } finally {
       setSending(false);
     }
   };
 
   /* ---------------------------------------------------------------- */
-
-  if (done) {
-    return (
-      <main className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6">
-        <div className="flex flex-col items-center gap-5 rounded-3xl border border-border/60 bg-card p-12 text-center shadow-xs">
-          <span className="grid size-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-xs">
-            <Check className="size-6 stroke-[2.5]" />
-          </span>
-          <h1 className="text-2xl font-semibold tracking-tight">Listing published successfully!</h1>
-          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-            <span className="font-semibold text-foreground">{form.name}</span> is now published and visible in the marketplace search and catalog.
-          </p>
-
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-            {publishedId ? (
-              <Link
-                href={`/studio-details?id=${publishedId}`}
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground shadow-xs transition-transform hover:brightness-95 active:scale-[0.98]"
-              >
-                View your studio listing
-                <ArrowRight className="size-3.5" />
-              </Link>
-            ) : null}
-            <Link
-              href="/studios"
-              className="inline-flex h-10 items-center gap-2 rounded-full border border-border/70 bg-card px-5 text-[13px] font-medium text-foreground transition-colors hover:border-foreground/30"
-            >
-              Explore all studios
-            </Link>
-            <Button
-              type="button"
-              onClick={() => {
-                setForm(initialForm);
-                setCoverImage(null);
-                setGallery([]);
-                setStep(1);
-                setDone(false);
-                setPublishedId(null);
-                setError(null);
-                setCoverImageUrl("");
-                setGalleryImageUrl("");
-              }}
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-border/70 bg-card px-4 text-[13px] text-muted-foreground hover:text-foreground"
-            >
-              Add another studio
-            </Button>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 lg:py-16">
