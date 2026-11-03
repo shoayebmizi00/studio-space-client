@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Stars } from "@/components/studios/studio-card";
 import { cn } from "cn";
-import type { StudioListing } from "@/lib/api";
+import type { Studio } from "@/lib/studio-type";
 import { useSavedStudios } from "@/lib/saved-studios";
 import { toast } from "sonner";
 
@@ -30,7 +30,7 @@ function SavedStudioCard({
   studio,
   onRemove,
 }: {
-  studio: StudioListing;
+  studio: Studio;
   onRemove: (id: string, name: string) => void;
 }) {
   const id = studio._id || studio.id || "";
@@ -122,7 +122,7 @@ function SavedStudioListCard({
   studio,
   onRemove,
 }: {
-  studio: StudioListing;
+  studio: Studio;
   onRemove: (id: string, name: string) => void;
 }) {
   const id = studio._id || studio.id || "";
@@ -230,23 +230,23 @@ function SavedStudioListCard({
 
 export function SavedStudiosView() {
   const { savedIds, count, isLoaded, toggle, clearAll } = useSavedStudios();
-  const [studios, setStudios] = useState<StudioListing[]>([]);
+  const [studios, setStudios] = useState<Studio[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  // Fetch published studios from the API proxy
+  // Load all studios straight from the Express server.
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/studios", { cache: "no-store" });
+        const res = await fetch("http://localhost:5000/studios", { cache: "no-store" });
         if (!res.ok) {
           const body = await res.json().catch(() => null);
           throw new Error(body?.error || `Server returned ${res.status}`);
         }
-        const data: StudioListing[] = await res.json();
+        const data: Studio[] = await res.json();
         setStudios(data);
       } catch (err) {
         console.error("Error loading studios for saved view:", err);

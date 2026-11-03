@@ -22,8 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "cn";
-import type { StudioListing } from "@/lib/api";
-import { createBooking } from "@/lib/bookings";
+import type { Studio } from "@/lib/studio-type";
 import { useSavedStudios } from "@/lib/saved-studios";
 import { toast } from "sonner";
 
@@ -41,7 +40,7 @@ function hoursBetween(start: string, end: string): number {
   return Number.isFinite(diff) && diff > 0 ? diff : 0;
 }
 
-function BookingWidget({ studio, deposit }: { studio: StudioListing; deposit: number }) {
+function BookingWidget({ studio, deposit }: { studio: Studio; deposit: number }) {
   const [date, setDate] = useState("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -60,13 +59,23 @@ function BookingWidget({ studio, deposit }: { studio: StudioListing; deposit: nu
     setSubmitting(true);
     setRequestError(null);
     try {
-      await createBooking({
-        studioId: studio._id,
-        date,
-        startTime: start,
-        endTime: end,
-        projectDetails: details,
+      // Send the booking request to our own API route.
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studioId: studio._id,
+          date,
+          startTime: start,
+          endTime: end,
+          projectDetails: details,
+        }),
       });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || "Could not request this booking.");
+      }
+
       setRequestSent(true);
       toast.success("Booking request sent", {
         description: "You can track the host's response in My bookings.",
@@ -215,7 +224,7 @@ function BookingWidget({ studio, deposit }: { studio: StudioListing; deposit: nu
 /* View                                                                */
 /* ------------------------------------------------------------------ */
 
-export function StudioDetailsView({ studio }: { studio: StudioListing | null }) {
+export function StudioDetailsView({ studio }: { studio: Studio | null }) {
   const [activePhoto, setActivePhoto] = useState(0);
   const studioId = studio?._id || studio?.id || "";
   const { has, toggle } = useSavedStudios();
@@ -252,7 +261,7 @@ export function StudioDetailsView({ studio }: { studio: StudioListing | null }) 
     );
   }
 
-  // Map API StudioListing shape to the detail format expected by the view
+  // Show the studio data in the layout this page expects.
   const detail = {
     about: [studio.fullDescription || studio.shortDescription].filter(Boolean),
     gallery: [studio.coverImage, ...(studio.gallery || [])].filter(
@@ -329,23 +338,28 @@ export function StudioDetailsView({ studio }: { studio: StudioListing | null }) 
 
         {/* Gallery */}
         <div className="mt-6 grid grid-cols-[3fr_1.2fr] items-stretch gap-3 max-md:grid-cols-1">
-          <div className="relative aspect-21/9 max-md:aspect-16/10 overflow-hidden rounded-2xl">
-            <Image
-              src={detail.gallery[activePhoto]}
-              alt={studio.name}
-              fill
-              unoptimized
-              sizes="(max-width: 768px) 100vw, 66vw"
-              className="object-cover"
-            />
-            <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur">
-              <svg viewBox="0 0 16 16" fill="currentColor" className="size-3">
-                <rect x="1" y="4" width="3" height="8" rx="0.5" />
-                <rect x="6.5" y="4" width="3" height="8" rx="0.5" />
-                <rect x="12" y="4" width="3" height="8" rx="0.5" />
-              </svg>
-              {detail.gallery.length} photos
-            </span>
+          <div className="relative aspect-21/9 max-md:aspect-16/10 overflow-hidden rounded-2xl bg-muted">
+            {/* Only show the photo when the studio actually has one. */}
+            {detail.gallery.length > 0 ? (
+              <>
+                <Image
+                  src={detail.gallery[activePhoto]}
+                  alt={studio.name}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 768px) 100vw, 66vw"
+                  className="object-cover"
+                />
+                <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-medium text-white backdrop-blur">
+                  <svg viewBox="0 0 16 16" fill="currentColor" className="size-3">
+                    <rect x="1" y="4" width="3" height="8" rx="0.5" />
+                    <rect x="6.5" y="4" width="3" height="8" rx="0.5" />
+                    <rect x="12" y="4" width="3" height="8" rx="0.5" />
+                  </svg>
+                  {detail.gallery.length} photos
+                </span>
+              </>
+            ) : null}
           </div>
           <div className="grid grid-rows-2 gap-3 max-md:grid-rows-2 max-md:hidden">
             {detail.gallery.map((photo: string, index: number) => (

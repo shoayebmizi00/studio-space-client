@@ -9,11 +9,11 @@ import { StudioCard } from "./studio-card";
 import { StudioListCard } from "./studio-list-card";
 import { SortSelect, type SortOption } from "./sort-select";
 import type { FilterState } from "./filters-panel";
-import type { StudioListing } from "@/lib/api";
+import type { Studio } from "@/lib/studio-type";
 import { useSavedStudios } from "@/lib/saved-studios";
 import { toast } from "sonner";
 
-type CatalogStudio = StudioListing & {
+type CatalogStudio = Studio & {
   id: string;
   location: string;
   price: number;
@@ -43,22 +43,20 @@ export function StudiosView({
   const [sort, setSort] = useState<SortOption>("Recommended");
   const { has, toggle } = useSavedStudios();
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [studios, setStudios] = useState<StudioListing[]>([]);
+  const [studios, setStudios] = useState<Studio[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadStudios() {
       try {
-        // Use the Next.js API route as a proxy so the browser never needs to
-        // reach the Express server directly (avoids cross-origin issues when
-        // the client fetches from a "use client" component).
-        const res = await fetch("/api/studios", { cache: "no-store" });
+        // Load all studios straight from the Express server.
+        const res = await fetch("http://localhost:5000/studios", { cache: "no-store" });
         if (!res.ok) {
           const data = await res.json().catch(() => null);
           throw new Error(data?.error || `Server responded with ${res.status}`);
         }
-        const data: StudioListing[] = await res.json();
+        const data: Studio[] = await res.json();
         setStudios(data);
       } catch (err) {
         console.error("Failed to load studios:", err);
@@ -227,8 +225,8 @@ export function StudiosView({
   );
 }
 
-function mapStudioListing(studio: StudioListing): CatalogStudio {
-  // Map backend StudioListing to the shape expected by the UI components
+function mapStudioListing(studio: Studio): CatalogStudio {
+  // Add the few extra fields the cards need (id, location, price, capacity).
   return {
     ...studio,
     id: studio._id || studio.id || "",

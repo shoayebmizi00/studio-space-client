@@ -4,10 +4,10 @@ import { Heart, MapPin, Users } from "lucide-react";
 import { Stars } from "./studio-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "cn";
-import type { StudioListing } from "@/lib/api";
+import type { Studio } from "@/lib/studio-type";
 
 interface StudioListCardProps {
-  studio: StudioListing;
+  studio: Studio;
   isFavorite?: boolean;
   onToggleFavorite?: (id: string) => void;
 }

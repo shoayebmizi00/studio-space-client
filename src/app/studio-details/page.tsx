@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { getStudio } from "@/lib/api";
-import { fetchStudioById } from "@/lib/studios-db";
+import type { Studio } from "@/lib/studio-type";
 import { StudioDetailsView } from "@/components/studio-details/studio-details-view";
 
 export const metadata: Metadata = {
@@ -15,17 +14,18 @@ export default async function StudioDetailsPage({
   searchParams: Promise<{ id?: string }>;
 }) {
   const { id } = await searchParams;
-  let studio = null;
 
-  try {
-    studio = await getStudio(id ?? "");
-  } catch {
-    // If Express backend is offline, try direct DB lookup
-  }
+  // Load this one studio straight from the Express server.
+  let studio: Studio | null = null;
 
-  if (!studio && id) {
+  if (id) {
     try {
-      studio = await fetchStudioById(id);
+      const res = await fetch(`http://localhost:5000/studios/${id}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        studio = await res.json();
+      }
     } catch {
       studio = null;
     }

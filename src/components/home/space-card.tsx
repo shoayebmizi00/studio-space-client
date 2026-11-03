@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { MapPin, Users } from "lucide-react";
 import { Stars } from "@/components/studios/studio-card";
-import type { StudioListing } from "@/lib/api";
+import type { Studio } from "@/lib/studio-type";
 
-export function SpaceCard({ studio }: { studio: StudioListing }) {
+export function SpaceCard({ studio }: { studio: Studio }) {
   const studioId = studio._id || studio.id || "";
   const image = studio.coverImage || studio.gallery?.[0];
 

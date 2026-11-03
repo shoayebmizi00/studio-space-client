@@ -33,50 +33,85 @@ import { AmenityRow, AreaField, EquipmentChip, FieldShell, InfoNote, SelectField
 const MAX_IMAGE_DIMENSION = 1920;
 const IMAGE_QUALITY = 0.82;
 
-async function readImageAsDataUrl(file: File): Promise<string> {
-  const image = await createImageBitmap(file);
-  const scale = Math.min(
-    1,
-    MAX_IMAGE_DIMENSION / Math.max(image.width, image.height)
-  );
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(image.width * scale);
-  canvas.height = Math.round(image.height * scale);
-
-  const context = canvas.getContext("2d");
-  if (!context) {
-    image.close();
-    throw new Error("Could not process this image.");
-  }
-
-  context.fillStyle = "#fff";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  image.close();
-
-  const compressed = await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("Could not compress this image."))),
-      "image/jpeg",
-      IMAGE_QUALITY
-    );
-  });
-
+// Reads the chosen file, shrinks it in a canvas, and returns it as a JPEG data URL.
+function readImageAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error("Could not read the processed image."));
-    reader.readAsDataURL(compressed);
+
+    reader.onload = () => {
+      const image = new Image();
+
+      image.onload = () => {
+        // Shrink very large photos so the saved JSON stays small.
+        const scale = Math.min(
+          1,
+          MAX_IMAGE_DIMENSION / Math.max(image.width, image.height)
+        );
+
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(image.width * scale);
+        canvas.height = Math.round(image.height * scale);
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          reject(new Error("Could not process this image."));
+          return;
+        }
+
+        // White background (helps transparent PNGs).
+        context.fillStyle = "#fff";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        resolve(canvas.toDataURL("image/jpeg", IMAGE_QUALITY));
+      };
+
+      image.onerror = () => {
+        reject(new Error("Could not read this image."));
+      };
+
+      image.src = reader.result as string;
+    };
+
+    reader.onerror = () => {
+      reject(new Error("Could not read this file."));
+    };
+
+    reader.readAsDataURL(file);
   });
 }
 
-function isHttpImageUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
+// Returns the link if it starts with http:// or https://, otherwise null.
+function checkImageUrl(text: string): string | null {
+  const url = text.trim();
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
   }
+  return null;
+}
+
+/** Resolves only once the browser has actually decoded the image. */
+function preloadImage(url: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const timer = window.setTimeout(
+      () => reject(new Error("That link took too long to load. Try another one.")),
+      10000
+    );
+    image.onload = () => {
+      window.clearTimeout(timer);
+      resolve();
+    };
+    image.onerror = () => {
+      window.clearTimeout(timer);
+      reject(
+        new Error(
+          "That link could not be loaded as an image. Paste a URL that points directly at a .jpg, .png or .webp file."
+        )
+      );
+    };
+    image.src = url;
+  });
 }
 
 function ImageTile({
@@ -134,6 +169,7 @@ export function AddStudioView() {
   const [galleryImageUrl, setGalleryImageUrl] = useState("");
   const [customEquipment, setCustomEquipment] = useState("");
   const [sending, setSending] = useState(false);
+  const [checkingUrl, setCheckingUrl] = useState<"cover" | "gallery" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [publishedId, setPublishedId] = useState<string | null>(null);
@@ -152,45 +188,70 @@ export function AddStudioView() {
   const progress = Math.round((step / TOTAL_STEPS) * 100);
 
   const pickCover = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+    const input = event.target;
+    const file = input.files?.[0];
+    input.value = ""; // allow the same file to be picked again
     if (!file) return;
 
     try {
       setCoverImage(await readImageAsDataUrl(file));
       setError(null);
+      toast.success("Cover image added", {
+        description: "It will be saved when you publish the listing.",
+      });
     } catch {
-      setError("Could not process that image. Try a JPEG, PNG, or WebP file.");
+      setError(
+        "Could not process that image — try a JPEG, PNG or WebP file. HEIC photos (iPhone) need converting to JPG first."
+      );
     }
   };
 
   const pickGallery = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
+    const input = event.target;
+    const files = Array.from(input.files ?? []);
+    input.value = "";
     if (files.length === 0) return;
     const remaining = 6 - gallery.length;
     try {
       const dataUrls = await Promise.all(files.slice(0, remaining).map(readImageAsDataUrl));
       setGallery((prev) => [...prev, ...dataUrls].slice(0, 6));
       setError(null);
+      toast.success(
+        dataUrls.length === 1 ? "Photo added to gallery" : `${dataUrls.length} photos added to gallery`
+      );
     } catch {
-      setError("Could not process those images. Try JPEG, PNG, or WebP files.");
+      setError(
+        "Could not process those images — try JPEG, PNG or WebP files. HEIC photos (iPhone) need converting to JPG first."
+      );
     }
   };
 
-  const useCoverImageUrl = () => {
-    const url = coverImageUrl.trim();
-    if (!isHttpImageUrl(url)) {
+  const applyCoverImageUrl = async () => {
+    const url = checkImageUrl(coverImageUrl);
+    if (!url) {
       setError("Enter a valid image link beginning with http:// or https://.");
       return;
     }
 
-    setCoverImage(url);
-    setCoverImageUrl("");
+    setCheckingUrl("cover");
     setError(null);
+    try {
+      await preloadImage(url);
+      setCoverImage(url);
+      setCoverImageUrl("");
+      toast.success("Cover image added", {
+        description: "The link loaded successfully.",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That link could not be loaded as an image.");
+    } finally {
+      setCheckingUrl(null);
+    }
   };
 
-  const addGalleryImageUrl = () => {
-    const url = galleryImageUrl.trim();
-    if (!isHttpImageUrl(url)) {
+  const addGalleryImageUrl = async () => {
+    const url = checkImageUrl(galleryImageUrl);
+    if (!url) {
       setError("Enter a valid image link beginning with http:// or https://.");
       return;
     }
@@ -203,9 +264,18 @@ export function AddStudioView() {
       return;
     }
 
-    setGallery((prev) => [...prev, url]);
-    setGalleryImageUrl("");
+    setCheckingUrl("gallery");
     setError(null);
+    try {
+      await preloadImage(url);
+      setGallery((prev) => [...prev, url]);
+      setGalleryImageUrl("");
+      toast.success("Photo added to gallery");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That link could not be loaded as an image.");
+    } finally {
+      setCheckingUrl(null);
+    }
   };
 
   const addCustomEquipment = () => {
@@ -223,10 +293,19 @@ export function AddStudioView() {
       return;
     }
 
+    if (!coverImage) {
+      setError(
+        "A cover image is required — upload a photo or paste an image link before publishing."
+      );
+      setStep(4);
+      return;
+    }
+
     setSending(true);
     setError(null);
     try {
-      const res = await fetch("/api/add-studio", {
+      // Send the whole listing (including the images) to the Express server.
+      const res = await fetch("http://localhost:5000/add-studio", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -306,6 +385,9 @@ export function AddStudioView() {
                 setStep(1);
                 setDone(false);
                 setPublishedId(null);
+                setError(null);
+                setCoverImageUrl("");
+                setGalleryImageUrl("");
               }}
               className="inline-flex h-10 items-center gap-1.5 rounded-full border border-border/70 bg-card px-4 text-[13px] text-muted-foreground hover:text-foreground"
             >
@@ -368,6 +450,14 @@ export function AddStudioView() {
             {STEPS[step - 1].title}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">{STEPS[step - 1].subtitle}</p>
+          {error ? (
+            <p
+              role="alert"
+              className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
+            >
+              {error}
+            </p>
+          ) : null}
         </div>
 
         {/* Step body */}
@@ -500,8 +590,8 @@ export function AddStudioView() {
           {step === 4 ? (
             <>
               <FieldShell
-                label="Cover image"
-                hint="Landscape, at least 1600px wide. Files are stored publicly — anyone with the link can open them."
+                label="Cover image (required)"
+                hint="Landscape, at least 1600px wide. Upload a photo or paste a link — publishing is blocked until a cover image is added."
               >
                 {coverImage ? (
                   <ImageTile
@@ -533,17 +623,24 @@ export function AddStudioView() {
                     type="url"
                     value={coverImageUrl}
                     onChange={(event) => setCoverImageUrl(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        applyCoverImageUrl();
+                      }
+                    }}
                     placeholder="Paste cover image URL"
                     aria-label="Cover image URL"
                     className="h-10 min-w-0 flex-1 rounded-xl border border-border/70 bg-background px-3.5 text-[13px] outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/25"
                   />
                   <Button
                     type="button"
-                    onClick={useCoverImageUrl}
-                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border/70 bg-card px-3 text-[13px] font-medium transition-colors hover:border-foreground/25"
+                    onClick={applyCoverImageUrl}
+                    disabled={checkingUrl !== null}
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border/70 bg-card px-3 text-[13px] font-medium transition-colors hover:border-foreground/25 disabled:opacity-60"
                   >
                     <Link2 className="size-4" />
-                    Use link
+                    {checkingUrl === "cover" ? "Checking…" : "Use link"}
                   </Button>
                 </div>
               </FieldShell>
@@ -589,6 +686,12 @@ export function AddStudioView() {
                       type="url"
                       value={galleryImageUrl}
                       onChange={(event) => setGalleryImageUrl(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          addGalleryImageUrl();
+                        }
+                      }}
                       placeholder="Paste a gallery image URL"
                       aria-label="Gallery image URL"
                       className="h-10 min-w-0 flex-1 rounded-xl border border-border/70 bg-background px-3.5 text-[13px] outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/25"
@@ -596,10 +699,11 @@ export function AddStudioView() {
                     <Button
                       type="button"
                       onClick={addGalleryImageUrl}
-                      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border/70 bg-card px-3 text-[13px] font-medium transition-colors hover:border-foreground/25"
+                      disabled={checkingUrl !== null}
+                      className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-border/70 bg-card px-3 text-[13px] font-medium transition-colors hover:border-foreground/25 disabled:opacity-60"
                     >
                       <Link2 className="size-4" />
-                      Add link
+                      {checkingUrl === "gallery" ? "Checking…" : "Add link"}
                     </Button>
                   </div>
                 ) : null}
@@ -712,7 +816,10 @@ export function AddStudioView() {
           <Button
             type="button"
             disabled={step === 1 || sending}
-            onClick={() => setStep((prev) => Math.max(1, prev - 1))}
+            onClick={() => {
+              setError(null);
+              setStep((prev) => Math.max(1, prev - 1));
+            }}
             className="flex items-center gap-2 rounded-full px-3 py-2 text-[13px] font-semibold tracking-tight transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40"
           >
             <ArrowLeft className="size-3.5" />
@@ -722,7 +829,10 @@ export function AddStudioView() {
           {step < TOTAL_STEPS ? (
             <Button
               type="button"
-              onClick={() => setStep((prev) => Math.min(TOTAL_STEPS, prev + 1))}
+              onClick={() => {
+                setError(null);
+                setStep((prev) => Math.min(TOTAL_STEPS, prev + 1));
+              }}
               className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground transition-transform hover:brightness-95 active:scale-[0.98]"
             >
               Continue
@@ -741,8 +851,6 @@ export function AddStudioView() {
           )}
         </div>
       </div>
-
-      {error ? <p className="mt-4 text-[13px] text-red-600">{error}</p> : null}
     </main>
   );
 }

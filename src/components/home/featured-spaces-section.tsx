@@ -1,22 +1,24 @@
 import { SectionHeader } from "./section-header";
 import { SpaceCard } from "./space-card";
-import { getStudios } from "@/lib/api";
-import { fetchPublishedStudios } from "@/lib/studios-db";
-import type { StudioListing } from "@/lib/api";
+import type { Studio } from "@/lib/studio-type";
 
 export async function FeaturedSpacesSection() {
-  let studios: StudioListing[] = [];
+  // Load the newest studios straight from the Express server.
+  let studios: Studio[] = [];
   let unavailable = false;
 
   try {
-    studios = (await getStudios()).slice(0, 6);
-  } catch {
-    try {
-      studios = (await fetchPublishedStudios()).slice(0, 6);
-    } catch {
-      unavailable = true;
+    const res = await fetch("http://localhost:5000/studios", { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error("Request failed");
     }
+    studios = await res.json();
+  } catch {
+    unavailable = true;
   }
+
+  // Show at most 6 cards.
+  studios = studios.slice(0, 6);
 
   return (
     <section className="bg-secondary/60 py-16 lg:py-24">

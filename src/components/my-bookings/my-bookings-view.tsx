@@ -20,15 +20,38 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  cancelBooking,
-  deleteBooking,
-  getBookings,
-  updateBooking,
-  type Booking,
-  type BookingStatus,
-} from "@/lib/bookings";
 import { toast } from "sonner";
+
+/* ------------------------------------------------------------------ */
+/* Booking types (the same shape our API sends back)                   */
+/* ------------------------------------------------------------------ */
+
+type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
+
+type Booking = {
+  id: string;
+  _id: string;
+  userId: string;
+  studioId: string;
+  studioName: string;
+  category?: string;
+  studioImage: string | null;
+  city: string;
+  country: string;
+  hostName: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  durationHours: number;
+  hourlyRate: number;
+  subtotal: number;
+  securityDeposit: number;
+  total: number;
+  projectDetails: string;
+  status: BookingStatus;
+  createdAt: string;
+  updatedAt: string;
+};
 
 const statusTabs = ["All", "Pending", "Confirmed", "Completed", "Cancelled"] as const;
 type StatusTab = (typeof statusTabs)[number];
@@ -94,18 +117,27 @@ export function MyBookingsView() {
 
   useEffect(() => {
     let active = true;
-    getBookings()
-      .then((data) => {
+
+    // Load my bookings from our own API route.
+    async function loadBookings() {
+      try {
+        const res = await fetch("/api/bookings", { cache: "no-store" });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          throw new Error(data?.error || "Could not load bookings.");
+        }
         if (active) setBookings(data);
-      })
-      .catch((loadError: unknown) => {
+      } catch (loadError) {
         if (active) {
           setError(loadError instanceof Error ? loadError.message : "Could not load bookings.");
         }
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoading(false);
-      });
+      }
+    }
+
+    loadBookings();
+
     return () => {
       active = false;
     };
@@ -137,7 +169,18 @@ export function MyBookingsView() {
     setSaving(true);
     setActionError(null);
     try {
-      const updated = await cancelBooking(booking.id);
+      // Mark this booking as cancelled.
+      const res = await fetch(`/api/bookings/${booking.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Cancelled" }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || "Could not cancel this booking.");
+      }
+      const updated: Booking = data;
+
       setBookings((current) => current.map((item) => item.id === updated.id ? updated : item));
       if (selected?.id === updated.id) setSelected(updated);
       toast.success("Booking cancelled");
@@ -155,7 +198,18 @@ export function MyBookingsView() {
     setSaving(true);
     setActionError(null);
     try {
-      const updated = await updateBooking(selected.id, editValues);
+      // Save the edited date/time/details.
+      const res = await fetch(`/api/bookings/${selected.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editValues),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || "Could not update this booking.");
+      }
+      const updated: Booking = data;
+
       setBookings((current) => current.map((item) => item.id === updated.id ? updated : item));
       setSelected(updated);
       setDialogMode("details");
@@ -174,7 +228,13 @@ export function MyBookingsView() {
     setSaving(true);
     setActionError(null);
     try {
-      await deleteBooking(selected.id);
+      // Delete this booking for good.
+      const res = await fetch(`/api/bookings/${selected.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Could not delete this booking.");
+      }
+
       setBookings((current) => current.filter((item) => item.id !== selected.id));
       closeDialog();
       toast.success("Booking deleted");

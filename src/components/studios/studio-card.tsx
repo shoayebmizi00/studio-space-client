@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Heart, MapPin, Users, Star } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
-import type { StudioListing } from "@/lib/api";
+import type { Studio } from "@/lib/studio-type";
 
 export function Stars({ rating }: { rating: number }) {
   const full = Math.floor(rating);
@@ -32,7 +32,7 @@ export function Stars({ rating }: { rating: number }) {
 }
 
 interface StudioCardProps {
-  studio: StudioListing;
+  studio: Studio;
   isFavorite: boolean;
   onToggleFavorite: (id: string) => void;
 }

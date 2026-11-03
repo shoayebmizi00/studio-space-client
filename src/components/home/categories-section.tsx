@@ -11,9 +11,7 @@ import {
   Video,
 } from "lucide-react";
 import { SectionHeader } from "./section-header";
-import { getStudios } from "@/lib/api";
-import { fetchPublishedStudios } from "@/lib/studios-db";
-import type { StudioListing } from "@/lib/api";
+import type { Studio } from "@/lib/studio-type";
 
 function categoryIcon(category: string) {
   const normalized = category.toLowerCase();
@@ -29,26 +27,34 @@ function categoryIcon(category: string) {
 }
 
 export async function CategoriesSection() {
-  let studios: StudioListing[] | null = null;
+  // Load all studios straight from the Express server.
+  let studios: Studio[] | null = null;
 
   try {
-    studios = await getStudios();
+    const res = await fetch("http://localhost:5000/studios", { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error("Request failed");
+    }
+    studios = await res.json();
   } catch {
-    try {
-      studios = await fetchPublishedStudios();
-    } catch {
-      studios = null;
+    studios = null;
+  }
+
+  // Count how many studios belong to each category.
+  const counts: { [name: string]: number } = {};
+  if (studios) {
+    for (const studio of studios) {
+      const category = studio.category.trim();
+      if (category) {
+        counts[category] = (counts[category] || 0) + 1;
+      }
     }
   }
-  const categoryCounts = studios
-    ? Array.from(
-        studios.reduce((counts, studio) => {
-          const category = studio.category.trim();
-          if (category) counts.set(category, (counts.get(category) ?? 0) + 1);
-          return counts;
-        }, new Map<string, number>())
-      ).sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    : [];
+
+  // Biggest categories first.
+  const categoryCounts = Object.entries(counts).sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+  );
 
   return (
     <section id="explore" className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
