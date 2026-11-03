@@ -178,8 +178,15 @@ export function StudiosView({
             </p>
 
             {isLoading ? (
-              <div className="min-h-100 flex items-center justify-center text-muted-foreground text-sm">
-                Loading studios from backend server...
+              <div className="grid min-h-100 grid-cols-1 gap-x-5 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
+                {[0, 1, 2, 3, 4, 5].map((item) => (
+                  <div key={item} className="animate-pulse">
+                    <div className="aspect-10/9 rounded-2xl bg-muted" />
+                    <div className="mt-4 h-4 w-2/3 rounded bg-muted" />
+                    <div className="mt-2 h-3 w-1/2 rounded bg-muted" />
+                    <div className="mt-3 h-3 w-1/3 rounded bg-muted" />
+                  </div>
+                ))}
               </div>
             ) : error ? (
               <div className="grid min-h-56 place-content-center gap-2 rounded-2xl border border-dashed border-red-300 bg-red-50/50 p-6 text-center text-red-900">
@@ -189,11 +196,20 @@ export function StudiosView({
                 </p>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="grid min-h-56 place-content-center gap-1 rounded-2xl border border-dashed border-border text-center">
-                <p className="text-sm font-medium">No studios match your filters</p>
-                <p className="text-xs text-muted-foreground">
-                  Try clearing the category or raising the max price.
-                </p>
+              <div className="grid min-h-56 place-content-center gap-3 rounded-2xl border border-dashed border-border text-center">
+                <div className="flex flex-col gap-1">
+                  <p className="text-sm font-medium">No studios match your filters</p>
+                  <p className="text-xs text-muted-foreground">
+                    Try clearing the category or raising the max price.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFilters({ ...defaultFilters })}
+                  className="mx-auto inline-flex h-9 items-center rounded-full border border-border/70 bg-card px-5 text-[13px] font-medium transition-colors hover:border-foreground/30"
+                >
+                  Clear all filters
+                </button>
               </div>
             ) : view === "grid" ? (
               <div className="grid grid-cols-1 gap-x-5 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">

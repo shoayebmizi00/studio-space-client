@@ -16,6 +16,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Stars } from "@/components/studios/studio-card";
 import { cn } from "cn";
 import type { Studio } from "@/lib/studio-type";
@@ -236,6 +244,7 @@ export function SavedStudiosView() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [confirmClear, setConfirmClear] = useState(false);
 
   // Load all studios straight from the Express server.
   useEffect(() => {
@@ -297,10 +306,14 @@ export function SavedStudiosView() {
   };
 
   const handleClearAll = () => {
-    if (confirm("Are you sure you want to clear all your saved studios?")) {
-      clearAll();
-      toast.success("Saved studios cleared");
-    }
+    // Custom confirmation modal instead of the browser confirm().
+    setConfirmClear(true);
+  };
+
+  const confirmClearAll = () => {
+    clearAll();
+    setConfirmClear(false);
+    toast.success("Saved studios cleared");
   };
 
   return (
@@ -419,8 +432,14 @@ export function SavedStudiosView() {
         {/* Content Section */}
         <div className="mt-6">
           {!isLoaded || loading ? (
-            <div className="grid min-h-60 place-content-center text-sm text-muted-foreground">
-              Loading your saved studios…
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2].map((item) => (
+                <div key={item} className="animate-pulse rounded-2xl border border-border/60 bg-card p-4">
+                  <div className="h-40 rounded-xl bg-muted" />
+                  <div className="mt-4 h-4 w-2/3 rounded bg-muted" />
+                  <div className="mt-2 h-3 w-1/2 rounded bg-muted" />
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
@@ -491,6 +510,35 @@ export function SavedStudiosView() {
           )}
         </div>
       </main>
+
+      {/* Clear-all confirmation modal */}
+      <Dialog open={confirmClear} onOpenChange={setConfirmClear}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Clear all saved studios?</DialogTitle>
+            <DialogDescription>
+              Every studio in your saved list will be removed. You can always save them again
+              later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              onClick={() => setConfirmClear(false)}
+              className="h-10 rounded-full border border-border bg-card px-5 text-[13px] font-medium"
+            >
+              Keep them
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmClearAll}
+              className="h-10 rounded-full bg-red-600 px-5 text-[13px] font-semibold text-white transition-colors hover:bg-red-700"
+            >
+              Clear all
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
