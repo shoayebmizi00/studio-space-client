@@ -52,7 +52,25 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   const booking = result.booking;
-  if (body.status === "Cancelled") {
+
+  // Status transitions: Pending → Confirmed → Completed, plus Cancelled.
+  if (body.status === "Confirmed") {
+    if (booking.status !== "Pending") {
+      return NextResponse.json({ error: "Only pending bookings can be confirmed" }, { status: 409 });
+    }
+    await bookings.updateOne(
+      { _id: booking._id, userId: result.userId },
+      { $set: { status: "Confirmed", updatedAt: new Date() } }
+    );
+  } else if (body.status === "Completed") {
+    if (booking.status !== "Confirmed") {
+      return NextResponse.json({ error: "Only confirmed bookings can be completed" }, { status: 409 });
+    }
+    await bookings.updateOne(
+      { _id: booking._id, userId: result.userId },
+      { $set: { status: "Completed", updatedAt: new Date() } }
+    );
+  } else if (body.status === "Cancelled") {
     if (!["Pending", "Confirmed"].includes(String(booking.status))) {
       return NextResponse.json({ error: "This booking cannot be cancelled" }, { status: 409 });
     }
@@ -85,6 +103,24 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
     if (projectDetails.length > 1000) {
       return NextResponse.json({ error: "Project details must be 1000 characters or fewer" }, { status: 400 });
+    }
+
+    // Same double-booking guard as when creating a booking.
+    const clash = await bookings.findOne({
+      _id: { $ne: booking._id },
+      studioId: booking.studioId,
+      date,
+      status: "Confirmed",
+      startTime: { $lt: endTime },
+      endTime: { $gt: startTime },
+    });
+    if (clash) {
+      return NextResponse.json(
+        {
+          error: `This studio is already booked from ${clash.startTime} to ${clash.endTime} on ${date}. Please choose a different time slot.`,
+        },
+        { status: 409 }
+      );
     }
 
     const durationHours = (endMinutes - startMinutes) / 60;

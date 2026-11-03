@@ -75,6 +75,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Studio is not available" }, { status: 404 });
   }
 
+  // Stop double-booking: reject the request when a Confirmed booking for
+  // this studio already covers the requested hours on that date.
+  const clash = await bookings.findOne({
+    studioId,
+    date,
+    status: "Confirmed",
+    startTime: { $lt: endTime },
+    endTime: { $gt: startTime },
+  });
+  if (clash) {
+    return NextResponse.json(
+      {
+        error: `This studio is already booked from ${clash.startTime} to ${clash.endTime} on ${date}. Please choose a different time slot.`,
+      },
+      { status: 409 }
+    );
+  }
+
   const durationHours = (endMinutes - startMinutes) / 60;
   const hourlyRate = Number(studio.hourlyRate ?? studio.pricing?.hourly_rate ?? studio.price ?? 0);
   const securityDeposit = Number(studio.securityDeposit ?? studio.pricing?.security_deposit ?? 0);
