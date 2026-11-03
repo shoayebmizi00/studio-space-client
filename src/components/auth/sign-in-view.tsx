@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, Lock, Mail } from "lucide-react";
+import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,12 +49,10 @@ export function SignInView() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const emailSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
-    setError(null);
     try {
       const { error: authError } = await authClient.signIn.email({
         email,
@@ -62,18 +61,21 @@ export function SignInView() {
       });
 
       if (authError) {
-        setError(authError.message || "Could not sign in. Check your email and password.");
+        toast.error("Could not sign in", {
+          description: authError.message || "Check your email and password.",
+        });
         return;
       }
 
       router.replace(getCallbackUrl());
       router.refresh();
     } catch (authError) {
-      setError(
-        authError instanceof Error
-          ? authError.message
-          : "Could not sign in. Check your connection and try again."
-      );
+      toast.error("Could not sign in", {
+        description:
+          authError instanceof Error
+            ? authError.message
+            : "Check your connection and try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -81,7 +83,6 @@ export function SignInView() {
 
   const googleSignIn = async () => {
     setLoading(true);
-    setError(null);
     try {
       await authClient.signIn.social({
         provider: "google",
@@ -89,12 +90,10 @@ export function SignInView() {
       });
       // Redirects to the provider — nothing to await afterwards.
     } catch (authError) {
-      setError(
-        authError instanceof Error
-          ? authError.message
-          : "Google sign-in is not available. Check the server setup."
-      );
-    } finally {
+      toast.error("Google sign-in is not available", {
+        description:
+          authError instanceof Error ? authError.message : "Check the server setup.",
+      });
       setLoading(false);
     }
   };
@@ -109,7 +108,7 @@ export function SignInView() {
       <span className="grid size-10 place-items-center rounded-xl bg-primary">
         <ArrowRight className="size-4 text-foreground" />
       </span>
-      <h1 className="mt-5 text-3xl font-semibold tracking-tight">Welcome back</h1>
+      <h1 className="mt-5 text-3xl font-semibold tracking-tight">Login</h1>
       <p className="mt-2 text-[13px] text-muted-foreground">
         Sign in to book studios or manage your listings.
       </p>
@@ -159,12 +158,17 @@ export function SignInView() {
               <Label htmlFor="password" className="text-[13px] font-semibold tracking-tight">
                 Password
               </Label>
-              <a
-                href="#"
+              <button
+                type="button"
+                onClick={() => {
+                  toast.info("Password reset is not enabled", {
+                    description: "Contact support if you cannot access your account.",
+                  });
+                }}
                 className="text-xs font-medium text-[#9db922] transition-colors hover:text-[#8aa41c]"
               >
                 Forgot password?
-              </a>
+              </button>
             </div>
             <div className="relative">
               <Input
@@ -182,16 +186,12 @@ export function SignInView() {
             </div>
           </div>
 
-          {error ? (
-            <p className="text-xs leading-relaxed text-red-600">{error}</p>
-          ) : null}
-
           <Button
             type="submit"
             disabled={loading}
             className="mt-1 h-11 w-full rounded-xl bg-primary text-[13px] font-semibold text-primary-foreground transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-60"
           >
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? "Logging in…" : "Login"}
           </Button>
         </form>
       </div>
@@ -202,7 +202,7 @@ export function SignInView() {
           href="/sign-up"
           className="font-semibold text-foreground transition-opacity hover:opacity-70"
         >
-          Create an account
+          Register
         </Link>
       </p>
 
