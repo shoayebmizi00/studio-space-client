@@ -93,14 +93,14 @@ export function HeroSection() {
               href="/studios"
               className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground transition-transform hover:brightness-95 active:scale-[0.98]"
             >
-              Explore studios
+              Explore Studios
               <ArrowRight className="size-3.5" />
             </Link>
             <Link
-              href="/how-it-works"
-              className="inline-flex h-10 items-center rounded-full border border-white/25 px-5 text-[13px] font-medium text-white transition-colors hover:bg-white/10"
+              href="/add-studio"
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-white/25 px-5 text-[13px] font-medium text-white transition-colors hover:bg-white/10"
             >
-              How it works
+              Host Your Space
             </Link>
           </div>
 

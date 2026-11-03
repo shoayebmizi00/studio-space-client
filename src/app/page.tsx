@@ -2,6 +2,7 @@ import { HeroSection } from "@/components/home/hero-section";
 import { CategoriesSection } from "@/components/home/categories-section";
 import { FeaturedSpacesSection } from "@/components/home/featured-spaces-section";
 import { HowItWorksSection } from "@/components/home/how-it-works-section";
+import { HostGuaranteeSection } from "@/components/home/host-guarantee-section";
 import { HostBannerSection } from "@/components/home/host-banner-section";
 import { WhyStudiospaceSection } from "@/components/home/why-studiospace-section";
 import { BecomeHostSection } from "@/components/home/become-host-section";
@@ -18,6 +19,7 @@ export default function Home() {
         <CategoriesSection />
         <FeaturedSpacesSection />
         <HowItWorksSection />
+        <HostGuaranteeSection />
         <HostBannerSection />
         <WhyStudiospaceSection />
         <BecomeHostSection />

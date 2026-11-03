@@ -11,6 +11,7 @@ import {
   Video,
 } from "lucide-react";
 import { SectionHeader } from "./section-header";
+import Link from "next/link";
 import type { Studio } from "@/lib/studio-type";
 
 function categoryIcon(category: string) {
@@ -63,13 +64,13 @@ export async function CategoriesSection() {
         title="Every kind of creative space"
         description="Explore our listing for every stage of production — filter by what your next shoot or event actually needs."
         action={
-          <a
+          <Link
             href="/studios"
             className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground transition-opacity hover:opacity-70"
           >
             View all studios
             <ArrowRight className="size-3.5" />
-          </a>
+          </Link>
         }
       />
 
@@ -77,7 +78,7 @@ export async function CategoriesSection() {
         {categoryCounts.map(([name, count]) => {
           const Icon = categoryIcon(name);
           return (
-          <a
+          <Link
             key={name}
             href={`/studios?category=${encodeURIComponent(name)}`}
             className="group flex items-start gap-3.5 rounded-2xl border border-border/70 bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-foreground/20 hover:shadow-md hover:shadow-black/5"
@@ -93,7 +94,7 @@ export async function CategoriesSection() {
                 {count} {count === 1 ? "studio" : "studios"}
               </span>
             </span>
-          </a>
+          </Link>
           );
         })}
       </div>

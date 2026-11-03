@@ -1,4 +1,5 @@
 import { SectionHeader } from "./section-header";
+import Link from "next/link";
 import { SpaceCard } from "./space-card";
 import type { Studio } from "@/lib/studio-type";
 
@@ -8,7 +9,8 @@ export async function FeaturedSpacesSection() {
   let unavailable = false;
 
   try {
-    const res = await fetch("http://localhost:5000/studios", { cache: "no-store" });
+    // ?limit=6 asks the server for only the newest 6 studios.
+    const res = await fetch("http://localhost:5000/studios?limit=6", { cache: "no-store" });
     if (!res.ok) {
       throw new Error("Request failed");
     }
@@ -17,7 +19,7 @@ export async function FeaturedSpacesSection() {
     unavailable = true;
   }
 
-  // Show at most 6 cards.
+  // Safety net: never show more than 6 cards.
   studios = studios.slice(0, 6);
 
   return (
@@ -28,13 +30,13 @@ export async function FeaturedSpacesSection() {
           title="Spaces creators are booking now"
           description="Browse studios published by hosts on StudioSpace."
           action={
-            <a
+            <Link
               href="/studios"
               className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-[13px] font-medium transition-colors hover:border-foreground/25"
             >
               Browse all
               <span aria-hidden>→</span>
-            </a>
+            </Link>
           }
         />
 

@@ -55,6 +55,13 @@ export function SpaceCard({ studio }: { studio: Studio }) {
             {studio.maxCapacity || studio.capacity || 0} people
           </p>
         </div>
+
+        <Link
+          href={`/studios/${studioId}`}
+          className="mt-1 flex h-9 items-center justify-center rounded-full border border-border/70 bg-background text-[13px] font-medium transition-colors hover:border-foreground/30"
+        >
+          View Details
+        </Link>
       </div>
     </article>
   );

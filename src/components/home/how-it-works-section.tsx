@@ -5,19 +5,20 @@ export function HowItWorksSection() {
   return (
     <section id="how-it-works" className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
       <SectionHeader
-        eyebrow="How it works"
-        title="From search to shoot in three steps"
+        eyebrow="How booking works"
+        title="From discovery to shoot in four steps"
         description="StudioSpace keeps the whole exchange in one place — browsing, availability, approval, and payments."
       />
 
       {/* Step progress */}
       <div className="mb-6 flex items-center justify-center gap-2" aria-hidden>
-        <span className="h-1 w-16 rounded-full bg-foreground/70" />
-        <span className="h-1 w-16 rounded-full bg-border" />
-        <span className="h-1 w-16 rounded-full bg-border" />
+        <span className="h-1 w-14 rounded-full bg-foreground/70" />
+        <span className="h-1 w-14 rounded-full bg-foreground/70" />
+        <span className="h-1 w-14 rounded-full bg-border" />
+        <span className="h-1 w-14 rounded-full bg-border" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((step, index) => (
           <div
             key={step.title}

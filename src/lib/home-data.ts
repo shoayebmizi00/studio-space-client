@@ -53,19 +53,25 @@ export type Step = {
 export const steps: Step[] = [
   {
     icon: Search,
-    title: "Search the marketplace",
+    title: "Discover Spaces",
     description:
       "Filter by location, price, or studio type and see real-time availability. Every result is a real, publishable space.",
   },
   {
-    icon: CalendarCheck2,
-    title: "Pick a slot that works",
+    icon: CalendarRange,
+    title: "Select Shoot Hours",
     description:
-      "Pick your hours, request the booking, or book instantly and get confirmation in real time. No more back-and-forth.",
+      "Pick the hours you need, check the live calendar, and see the exact price before you commit. No surprises.",
+  },
+  {
+    icon: CalendarCheck2,
+    title: "Book Instantly",
+    description:
+      "Request the booking or book instantly and get confirmation in real time. No more back-and-forth messages.",
   },
   {
     icon: Sparkles,
-    title: "Create something great",
+    title: "Create & Produce",
     description:
       "Show up, shoot, and leave the space how you found it. Reviews keep both sides honest, and the invoice is already settled.",
   },

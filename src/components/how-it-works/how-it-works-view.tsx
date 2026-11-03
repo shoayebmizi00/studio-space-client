@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   Search,
   CalendarDays,
@@ -178,13 +179,13 @@ function HostsSection() {
             ))}
           </ol>
 
-          <a
+          <Link
             href="/add-studio"
             className="mt-9 inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground transition-transform hover:brightness-95 active:scale-[0.98]"
           >
             List your studio
             <ArrowRight className="size-3.5" />
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -222,19 +223,19 @@ function CtaSection() {
             Ready to see what&apos;s available near you?
           </h2>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <a
+            <Link
               href="/studios"
               className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[13px] font-medium text-primary-foreground transition-transform hover:brightness-95 active:scale-[0.98]"
             >
               Explore studios
               <ArrowRight className="size-3.5" />
-            </a>
-            <a
+            </Link>
+            <Link
               href="/contact"
               className="inline-flex h-10 items-center rounded-full border border-white/20 px-5 text-[13px] font-medium text-white transition-colors hover:bg-white/10"
             >
               Read the FAQ
-            </a>
+            </Link>
           </div>
         </div>
       </div>
