@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Heart, LogOut, Moon, Sun, UserRound } from "lucide-react";
+import {
+  CalendarDays,
+  Heart,
+  LayoutDashboard,
+  LayoutList,
+  LogOut,
+  Moon,
+  Plus,
+  Sun,
+  UserRound,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,17 +24,19 @@ import { Logo } from "./logo";
 import { cn } from "cn";
 
 const links = [
-  { label: "Explore studios", href: "/studios" },
-  { label: "How it works", href: "/how-it-works" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
+  { label: "Home", href: "/" },
+  { label: "Explore Studios", href: "/studios" },
+  { label: "How It Works", href: "/how-it-works" },
+  { label: "About Us", href: "/about" },
 ];
 
 const menuLinks = [
-  { label: "My bookings", href: "/my-bookings" },
-  { label: "Saved studios", href: "/saved-studios" },
-  { label: "Add a studio", href: "/add-studio" },
-  { label: "Profile", href: "/profile" },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Add New Studio", href: "/add-studio", icon: Plus },
+  { label: "My Studio Listings", href: "/my-listings", icon: LayoutList },
+  { label: "My Bookings", href: "/my-bookings", icon: CalendarDays },
+  { label: "Saved Studios", href: "/saved-studios", icon: Heart },
+  { label: "Profile", href: "/profile", icon: UserRound },
 ];
 
 function initialsOf(name: string, email: string): string {
@@ -85,6 +97,8 @@ export function Navbar({ className }: { className?: string }) {
   return (
     <header
       className={cn(
+        // Sticky header: the nav stays visible while the page scrolls.
+        "sticky top-0 z-50 border-b border-border/60",
         // Match the current page's band color (studios page is lighter).
         isLanding ? "bg-background" : "bg-surface-alt",
         className
@@ -95,7 +109,9 @@ export function Navbar({ className }: { className?: string }) {
 
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((link) => {
-            const active = pathname.startsWith(link.href);
+            // The Home link only counts as active on the front page.
+            const active =
+              link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
             return (
               <Link
                 key={link.label}
@@ -201,7 +217,7 @@ export function Navbar({ className }: { className?: string }) {
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition-colors hover:bg-secondary"
                     >
-                      <UserRound className="size-3.5 text-muted-foreground" />
+                      <link.icon className="size-3.5 text-muted-foreground" />
                       {link.label}
                     </Link>
                   ))}
@@ -212,7 +228,7 @@ export function Navbar({ className }: { className?: string }) {
                     className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] text-red-600 transition-colors hover:bg-secondary"
                   >
                     <LogOut className="size-3.5" />
-                    Sign out
+                    Logout
                   </Button>
                 </div>
               ) : null}
@@ -223,13 +239,13 @@ export function Navbar({ className }: { className?: string }) {
                 href="/sign-in"
                 className="flex h-9 items-center rounded-full px-3 text-[13px] font-medium text-foreground/80 transition-colors hover:bg-secondary/60 hover:text-foreground"
               >
-                Sign in
+                Login
               </Link>
               <Link
                 href="/sign-up"
                 className="flex h-9 items-center rounded-full border border-border bg-card px-4 text-[13px] font-medium transition-colors hover:border-foreground/25"
               >
-                Sign up
+                Register
               </Link>
             </>
           )}

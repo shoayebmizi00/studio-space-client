@@ -1,4 +1,4 @@
-import { Asterisk } from "lucide-react";
+import { Aperture } from "lucide-react";
 import Link from "next/link";
 import { cn } from "cn";
 
@@ -11,7 +11,7 @@ export function Logo({ className, dark }: { className?: string; dark?: boolean }
           dark ? "bg-primary" : "bg-foreground"
         )}
       >
-        <Asterisk
+        <Aperture
           className={cn("size-4", dark ? "text-foreground" : "text-primary")}
         />
       </span>

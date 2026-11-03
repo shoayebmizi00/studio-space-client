@@ -1,17 +1,21 @@
 import Link from "next/link";
 import { Logo } from "./logo";
+import { NewsletterForm } from "./newsletter-form";
 
 const socials = [
   {
     label: "Instagram",
+    href: "https://www.instagram.com",
     path: "M12 2.2c-2.7 0-3 0-4.1.1-1 0-1.7.2-2.3.4-.6.3-1.1.6-1.6 1.1-.5.5-.8 1-1.1 1.6-.2.6-.4 1.3-.4 2.3-.1 1-.1 1.4-.1 4.1s0 3 .1 4.1c0 1 .2 1.7.4 2.3.3.6.6 1.1 1.1 1.6.5.5 1 .8 1.6 1.1.6.2 1.3.4 2.3.4 1 .1 1.4.1 4.1.1s3 0 4.1-.1c1 0 1.7-.2 2.3-.4.6-.3 1.1-.6 1.6-1.1.5-.5.8-1 1.1-1.6.2-.6.4-1.3.4-2.3.1-1 .1-1.4.1-4.1s0-3-.1-4.1c0-1-.2-1.7-.4-2.3-.3-.6-.6-1.1-1.1-1.6-.5-.5-1-.8-1.6-1.1-.6-.2-1.3-.4-2.3-.4-1-.1-1.4-.1-4.1-.1zM12 22c-2.7 0-3 0-4-.1-1 0-1.6-.2-2-.3-.5-.2-.8-.4-1.2-.8-.4-.4-.6-.7-.8-1.2-.1-.4-.3-1-.3-2C7.6 15 7.6 14.7 7.6 12s0-3 .1-4c0-1 .2-1.6.3-2 .2-.5.4-.8.8-1.2.4-.4.7-.6 1.2-.8.4-.1 1-.3 2-.3 1-.1 1.3-.1 4-.1s3 0 4 .1c1 0 1.6.2 2 .3.5.2.8.4 1.2.8.4.4.6.7.8 1.2.1.4.3 1 .3 2 .1 1 .1 1.3.1 4s0 3-.1 4c0 1-.2 1.6-.3 2-.2.5-.4.8-.8 1.2-.4.4-.7.6-1.2.8-.4.1-1 .3-2 .3-1 .1-1.3.1-4 .1zm0-15.3a5.3 5.3 0 100 10.6 5.3 5.3 0 000-10.6zm0 8.7a3.4 3.4 0 110-6.8 3.4 3.4 0 010 6.8zm6.8-9a1.2 1.2 0 11-2.4 0 1.2 1.2 0 012.4 0z",
   },
   {
     label: "X",
+    href: "https://x.com",
     path: "M18.9 1.2h3.7l-8.1 9.3L24 22.8h-7.5l-5.9-7.7-6.7 7.7H.2l8.7-9.9L0 1.2h7.7l5.3 7 5.9-7zm-1.3 19.5h2L6.5 3.2H4.3l13.3 17.5z",
   },
   {
     label: "LinkedIn",
+    href: "https://www.linkedin.com",
     path: "M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.9-3-1.9 0-2.2 1.4-2.2 2.9v5.7H9.1V9h3.4v1.6h.1c.5-.9 1.7-1.9 3.4-1.9 3.6 0 4.3 2.4 4.3 5.5v6.3zM5.3 7.4a2.1 2.1 0 110-4.2 2.1 2.1 0 010 4.2zM7.1 20.5H3.5V9h3.6v11.5z",
   },
 ];
@@ -78,11 +82,14 @@ export function Footer() {
             <p className="max-w-60 text-xs leading-relaxed text-muted-foreground">
               The marketplace for creative space. Create. Collaborate. Produce.
             </p>
+            <NewsletterForm />
             <div className="flex items-center gap-2">
               {socials.map((social) => (
                 <a
                   key={social.label}
-                  href="#"
+                  href={social.href}
+                  target="_blank"
+                  rel="noreferrer"
                   aria-label={social.label}
                   className="grid size-8 place-items-center rounded-full border border-border bg-card text-foreground/70 transition-colors hover:border-foreground/25 hover:text-foreground"
                 >
