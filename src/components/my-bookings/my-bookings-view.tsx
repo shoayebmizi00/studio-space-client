@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { jsPDF } from "jspdf";
 import {
   CalendarDays,
   Clock3,
@@ -88,6 +89,74 @@ function money(value: number): string {
     style: "currency",
     currency: "USD",
   }).format(value);
+}
+
+/* Builds and downloads a PDF invoice for a confirmed booking. */
+function downloadInvoice(booking: Booking) {
+  const doc = new jsPDF();
+
+  // Header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text("StudioSpace", 14, 22);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "normal");
+  doc.text("Booking invoice", 14, 30);
+  doc.text(`Invoice no. SS-${booking.id.slice(-8)}`, 14, 37);
+  doc.text(`Issued: ${new Date().toLocaleDateString("en-US")}`, 14, 44);
+
+  doc.setDrawColor(160);
+  doc.line(14, 49, 196, 49);
+
+  // Booking details
+  const rows: Array<[string, string]> = [
+    ["Studio", booking.studioName],
+    ["Location", [booking.city, booking.country].filter(Boolean).join(", ") || "—"],
+    ["Host", booking.hostName || "Studio host"],
+    ["Date", formatBookingDate(booking)],
+    ["Duration", `${booking.durationHours.toFixed(2)} hours`],
+    ["Hourly rate", money(booking.hourlyRate)],
+    ["Status", booking.status],
+  ];
+
+  let y = 60;
+  for (const [label, value] of rows) {
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(90);
+    doc.text(label, 14, y);
+    doc.setTextColor(20);
+    doc.text(String(value), 70, y);
+    y += 8;
+  }
+
+  // Totals
+  y += 4;
+  doc.setDrawColor(200);
+  doc.line(14, y - 6, 196, y - 6);
+  doc.setTextColor(90);
+  doc.text("Subtotal", 14, y);
+  doc.setTextColor(20);
+  doc.text(money(booking.subtotal), 196, y, { align: "right" });
+  y += 8;
+  doc.setTextColor(90);
+  doc.text("Security deposit", 14, y);
+  doc.setTextColor(20);
+  doc.text(money(booking.securityDeposit), 196, y, { align: "right" });
+  y += 10;
+  doc.setFont("helvetica", "bold");
+  doc.text("Total", 14, y);
+  doc.text(money(booking.total), 196, y, { align: "right" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text(
+    "Thank you for booking with StudioSpace. This invoice confirms your reservation.",
+    14,
+    y + 16
+  );
+
+  doc.save(`studiospace-invoice-${booking.id.slice(-8)}.pdf`);
 }
 
 function StatusBadge({ status }: { status: BookingStatus }) {
@@ -193,6 +262,37 @@ export function MyBookingsView() {
     }
   };
 
+  /* Advance a booking: Pending → Confirmed → Completed. */
+  const handleStatus = async (booking: Booking, next: "Confirmed" | "Completed") => {
+    setSaving(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error || `Could not mark this booking as ${next.toLowerCase()}.`);
+      }
+      const updated: Booking = data;
+
+      setBookings((current) => current.map((item) => item.id === updated.id ? updated : item));
+      if (selected?.id === updated.id) setSelected(updated);
+      toast.success(
+        next === "Confirmed" ? "Booking confirmed" : "Booking marked as completed",
+        { description: `${booking.studioName} is now ${next.toLowerCase()}.` }
+      );
+    } catch (statusError) {
+      const message = statusError instanceof Error ? statusError.message : "Please try again.";
+      setActionError(message);
+      toast.error("Could not update booking status", { description: message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!selected) return;
     setSaving(true);
@@ -288,7 +388,18 @@ export function MyBookingsView() {
 
       <div className="mt-5 flex flex-col gap-3">
         {loading ? (
-          <p className="py-16 text-center text-sm text-muted-foreground">Loading your bookings…</p>
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="animate-pulse rounded-2xl border border-border/70 bg-card p-4 sm:flex-row sm:items-center"
+              >
+                <div className="h-24 w-full rounded-xl bg-muted sm:h-21.5 sm:w-29" />
+                <div className="mt-4 h-4 w-1/2 rounded bg-muted sm:mt-0" />
+                <div className="mt-2 h-3 w-1/3 rounded bg-muted" />
+              </div>
+            ))}
+          </div>
         ) : error ? (
           <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">{error}</div>
         ) : filteredBookings.length === 0 ? (
@@ -333,6 +444,16 @@ export function MyBookingsView() {
                   <Button type="button" onClick={() => openDialog(booking, "details")} className="h-7 rounded-full border border-border/70 bg-card px-3 text-[11px] font-normal hover:bg-muted">
                     View details
                   </Button>
+                  {booking.status === "Pending" ? (
+                    <Button type="button" disabled={saving} onClick={() => handleStatus(booking, "Confirmed")} className="h-7 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 text-[11px] font-normal text-emerald-700 hover:bg-emerald-100">
+                      Confirm
+                    </Button>
+                  ) : null}
+                  {booking.status === "Confirmed" ? (
+                    <Button type="button" disabled={saving} onClick={() => handleStatus(booking, "Completed")} className="h-7 rounded-full border border-border/70 bg-card px-2.5 text-[11px] font-normal hover:bg-muted">
+                      Mark completed
+                    </Button>
+                  ) : null}
                   {booking.status === "Pending" || booking.status === "Confirmed" ? (
                     <Button type="button" disabled={saving} onClick={() => handleCancel(booking)} className="h-7 rounded-full bg-transparent px-2.5 text-[11px] font-normal text-muted-foreground hover:bg-muted hover:text-foreground">
                       Cancel
@@ -376,6 +497,15 @@ export function MyBookingsView() {
               <DialogFooter className="-mx-6 -mb-6 rounded-b-2xl">
                 {selected.status === "Pending" ? (
                   <Button type="button" onClick={startEditing} className="h-9 rounded-xl border border-border/70 bg-card px-4 text-[13px]">Edit request</Button>
+                ) : null}
+                {selected.status === "Pending" ? (
+                  <Button type="button" disabled={saving} onClick={() => handleStatus(selected, "Confirmed")} className="h-9 rounded-xl bg-primary px-4 text-[13px] text-primary-foreground">Confirm booking</Button>
+                ) : null}
+                {selected.status === "Confirmed" ? (
+                  <Button type="button" disabled={saving} onClick={() => handleStatus(selected, "Completed")} className="h-9 rounded-xl border border-border/70 bg-card px-4 text-[13px]">Mark completed</Button>
+                ) : null}
+                {selected.status === "Confirmed" || selected.status === "Completed" ? (
+                  <Button type="button" onClick={() => downloadInvoice(selected)} className="h-9 rounded-xl border border-border/70 bg-card px-4 text-[13px]">Download invoice</Button>
                 ) : null}
                 {selected.status === "Pending" || selected.status === "Confirmed" ? (
                   <Button type="button" disabled={saving} onClick={() => handleCancel(selected)} className="h-9 rounded-xl bg-transparent px-4 text-[13px] text-red-700 hover:bg-red-50">Cancel booking</Button>
