@@ -32,7 +32,7 @@ export async function CategoriesSection() {
   let studios: Studio[] | null = null;
 
   try {
-    const res = await fetch("http://localhost:5000/studios", { cache: "no-store" });
+    const res = await fetch(`${process.env.API_URL}/studios`, { cache: "no-store" });
     if (!res.ok) {
       throw new Error("Request failed");
     }

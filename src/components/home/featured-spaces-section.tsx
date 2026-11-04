@@ -10,7 +10,7 @@ export async function FeaturedSpacesSection() {
 
   try {
     // ?limit=6 asks the server for only the newest 6 studios.
-    const res = await fetch("http://localhost:5000/studios?limit=6", { cache: "no-store" });
+    const res = await fetch(`${process.env.API_URL}/studios?limit=6`, { cache: "no-store" });
     if (!res.ok) {
       throw new Error("Request failed");
     }
